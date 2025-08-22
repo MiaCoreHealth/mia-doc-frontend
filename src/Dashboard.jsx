@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
-// Avatar import satırını buradan kaldırıyoruz.
+// Artık avatarı buradan import etmiyoruz.
 
 function Dashboard({ handleLogout }) {
+  // ... (Tüm fonksiyonlarınız ve state'leriniz aynı, değişiklik yok) ...
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,12 +19,11 @@ function Dashboard({ handleLogout }) {
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
-  
+
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
       const token = localStorage.getItem('userToken');
       if (!token) { handleLogout(); return; }
-      
       const apiUrl = process.env.REACT_APP_API_URL;
       try {
         const response = await axios.get(`${apiUrl}/users/me/`, {
@@ -31,7 +31,6 @@ function Dashboard({ handleLogout }) {
         });
         const fetchedUser = response.data;
         setUser(fetchedUser);
-
         setMessages([
           {
             sender: 'mia-doc',
@@ -43,7 +42,6 @@ function Dashboard({ handleLogout }) {
         handleLogout();
       }
     };
-
     fetchUserAndWelcome();
   }, [handleLogout]);
 
@@ -55,10 +53,8 @@ function Dashboard({ handleLogout }) {
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     const apiUrl = process.env.REACT_APP_API_URL;
-
     setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${selectedFile.name}` }]);
     setMessages(prev => [...prev, { sender: 'mia-doc', text: 'Raporunu aldım, inceliyorum...' }]);
-
     const formData = new FormData();
     formData.append('file', selectedFile);
     try {
@@ -68,10 +64,8 @@ function Dashboard({ handleLogout }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
       setMessages(prev => [...prev, { sender: 'mia-doc', text: response.data.analysis_result }]);
       setHistoryKey(prevKey => prevKey + 1);
-
     } catch (error) {
       const errorText = error.response ? error.response.data.detail : 'Analiz sırasında bir ağ hatası oluştu.';
       setMessages(prev => [...prev, { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
@@ -101,7 +95,6 @@ function Dashboard({ handleLogout }) {
           </div>
         </div>
       </nav>
-      
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
           {messages.map((msg, index) => (
@@ -109,10 +102,7 @@ function Dashboard({ handleLogout }) {
               {/* ---- DEĞİŞİKLİK BURADA ---- */}
               {/* Avatarı artık doğrudan public yolundan çağırıyoruz */}
               {msg.sender === 'mia-doc' && <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />}
-              
-              <div className={`message-bubble ${msg.sender}`}>
-                {msg.text}
-              </div>
+              <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && (
@@ -126,14 +116,12 @@ function Dashboard({ handleLogout }) {
           )}
         </div>
       </div>
-      
       <div className="input-group">
         <input type="file" className="form-control" accept="image/png, image/jpeg" onChange={handleFileChange} disabled={isLoading} id="fileInput"/>
         <button className="btn btn-primary" onClick={handleAnalyze} disabled={isLoading || !selectedFile}>
           {isLoading ? 'Analiz Ediliyor...' : 'Analiz Et'}
         </button>
       </div>
-
       <History key={historyKey} />
     </div>
   );
