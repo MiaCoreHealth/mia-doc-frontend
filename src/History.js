@@ -1,16 +1,16 @@
 // frontend/src/History.js
 
-import React, 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format, addHours } from 'date-fns';
 
 function History() {
   const [reports, setReports] = useState([]);
   const [message, setMessage] = useState('Geçmiş raporlar yükleniyor...');
-
+  
+  // fetchHistory fonksiyonunu useEffect'in dışında tanımlamak,
+  // onu başka yerlerde de (örn: silme sonrası) çağırabilmemizi sağlar.
   const fetchHistory = async () => {
-    // ... (fetchHistory fonksiyonu aynı, değişiklik yok)
     const token = localStorage.getItem('userToken');
     if (!token) {
       setMessage('Geçmişi görmek için giriş yapmalısınız.');
@@ -37,27 +37,23 @@ function History() {
   }, []);
 
   const formatToLocalTime = (utcDateString) => {
-    // ... (formatToLocalTime fonksiyonu aynı, değişiklik yok)
     const date = new Date(utcDateString);
     const localDate = addHours(date, 3);
     return format(localDate, "dd MMMM yyyy, HH:mm:ss");
   };
 
-  // YENİ: Silme işlemini yapan fonksiyon
   const handleDelete = async (reportId) => {
-    // Kullanıcıya silmek istediğinden emin olup olmadığını soruyoruz
     const isConfirmed = window.confirm("Bu raporu kalıcı olarak silmek istediğinizden emin misiniz?");
     
     if (isConfirmed) {
       const token = localStorage.getItem('userToken');
       const apiUrl = process.env.REACT_APP_API_URL;
       try {
-        // Backend'deki silme endpoint'ine DELETE isteği gönderiyoruz
         await axios.delete(`${apiUrl}/reports/${reportId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        // Başarılı olursa, sildiğimiz raporu ekrandaki listeden de kaldırıyoruz
+        // Ekranda anında güncelleme yapmak için state'i filtreliyoruz
         setReports(prevReports => prevReports.filter(report => report.id !== reportId));
         
       } catch (error) {
@@ -81,16 +77,15 @@ function History() {
                 data-bs-toggle="collapse" 
                 data-bs-target={`#collapse-${report.id}`} 
                 aria-expanded={index === 0} 
-                aria-controls={`#collapse-${report.id}`}
+                aria-controls={`collapse-${report.id}`}
               >
                 <span className="fw-bold">{report.original_filename}</span>
                 <span className="ms-auto text-muted small me-2">{formatToLocalTime(report.upload_date)}</span>
                 
-                {/* YENİ: Sil butonu */}
                 <button 
                   className="btn btn-sm btn-outline-danger"
                   onClick={(e) => {
-                    e.stopPropagation(); // Butonun akordiyonu açıp kapatmasını engelle
+                    e.stopPropagation();
                     handleDelete(report.id);
                   }}
                 >
