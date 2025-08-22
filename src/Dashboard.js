@@ -4,13 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History';
+// Avatar resmini import ediyoruz
+import miaDocAvatar from './images/mia-doc_avatar.png'; 
 
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
-  const [selectedFile, setSelectedFile] = useState(null); // Dosya adını göstermek için yeni state
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
@@ -48,7 +50,6 @@ function Dashboard({ handleLogout }) {
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      // Mesajı sohbet ekranına ekleyelim
       setMessages(prev => [...prev, { sender: 'mia-doc', text: `Lütfen önce bir rapor dosyası seçin.` }]);
       return;
     }
@@ -77,7 +78,7 @@ function Dashboard({ handleLogout }) {
       setMessages(prev => [...prev, { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
     } finally {
       setIsLoading(false);
-      setSelectedFile(null); // Analiz sonrası seçimi sıfırla
+      setSelectedFile(null);
     }
   };
 
@@ -101,25 +102,32 @@ function Dashboard({ handleLogout }) {
           </div>
         </div>
       </nav>
+      
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
           {messages.map((msg, index) => (
-            <div key={index} className={`message-bubble ${msg.sender}`}>
-              {msg.text}
+            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
+              {/* Eğer mesaj MİA-DOC'tan ise, avatarı göster */}
+              {msg.sender === 'mia-doc' && <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />}
+              
+              <div className={`message-bubble ${msg.sender}`}>
+                {msg.text}
+              </div>
             </div>
           ))}
           {isLoading && (
-             <div className="message-bubble mia-doc">
-               <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
+             <div className="d-flex align-items-end mb-3 justify-content-start">
+               <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />
+               <div className="message-bubble mia-doc">
+                 <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
+               </div>
              </div>
           )}
         </div>
       </div>
       
       <div className="input-group">
-        {/* ---- DÜZELTME BU BÖLÜMDE ---- */}
         <input type="file" className="form-control" accept="image/png, image/jpeg" onChange={handleFileChange} disabled={isLoading} id="fileInput"/>
-        {/* Analiz et butonu ayrı bir buton olarak daha iyi çalışır */}
         <button className="btn btn-primary" onClick={handleAnalyze} disabled={isLoading || !selectedFile}>
           {isLoading ? 'Analiz Ediliyor...' : 'Analiz Et'}
         </button>
