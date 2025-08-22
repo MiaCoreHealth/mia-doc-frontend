@@ -1,5 +1,3 @@
-// frontend/src/Register.js
-
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -10,7 +8,7 @@ function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const apiUrl = process.env.REACT_APP_API_URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
     try {
       const response = await axios.post(`${apiUrl}/register/`, {
         email: email,
@@ -59,8 +57,7 @@ function Register() {
             </button>
           </div>
         </form>
-        {message && <p className="mt-3 text-center text-success">{message.includes('başarıyla') ? message : ''}</p>}
-        {message && <p className="mt-3 text-center text-danger">{!message.includes('başarıyla') ? message : ''}</p>}
+        {message && <p className={`mt-3 text-center ${message.includes('başarıyla') ? 'text-success' : 'text-danger'}`}>{message}</p>}
       </div>
     </div>
   );

@@ -1,13 +1,9 @@
-// frontend/src/Dashboard.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
-// Avatarı artık import etmiyoruz.
 
 function Dashboard({ handleLogout }) {
-  // ... (Tüm fonksiyonlarınız ve state'leriniz aynı, değişiklik yok) ...
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,12 +15,13 @@ function Dashboard({ handleLogout }) {
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
-
+  
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
       const token = localStorage.getItem('userToken');
       if (!token) { handleLogout(); return; }
-      const apiUrl = process.env.REACT_APP_API_URL;
+      
+      const apiUrl = import.meta.env.VITE_API_URL;
       try {
         const response = await axios.get(`${apiUrl}/users/me/`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -32,10 +29,7 @@ function Dashboard({ handleLogout }) {
         const fetchedUser = response.data;
         setUser(fetchedUser);
         setMessages([
-          {
-            sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
-          }
+          { sender: 'mia-doc', text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.` }
         ]);
       } catch (error) {
         console.error("Kullanıcı bilgisi alınamadı:", error);
@@ -52,17 +46,14 @@ function Dashboard({ handleLogout }) {
     }
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
-    const apiUrl = process.env.REACT_APP_API_URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
     setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${selectedFile.name}` }]);
     setMessages(prev => [...prev, { sender: 'mia-doc', text: 'Raporunu aldım, inceliyorum...' }]);
     const formData = new FormData();
     formData.append('file', selectedFile);
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       setMessages(prev => [...prev, { sender: 'mia-doc', text: response.data.analysis_result }]);
       setHistoryKey(prevKey => prevKey + 1);
@@ -86,9 +77,7 @@ function Dashboard({ handleLogout }) {
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          <span className="navbar-brand">
-            {user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}
-          </span>
+          <span className="navbar-brand">{user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}</span>
           <div>
             <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
             <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>

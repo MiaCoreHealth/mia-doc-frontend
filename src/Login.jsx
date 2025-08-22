@@ -1,5 +1,3 @@
-// frontend/src/Login.jsx
-
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -10,19 +8,15 @@ function Login({ onLoginSuccess }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+    
     const params = new URLSearchParams();
     params.append('username', email);
     params.append('password', password);
 
-    const apiUrl = process.env.REACT_APP_API_URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     try {
-      // ---- HATA BURADAYDI, ŞİMDİ DÜZELTİLDİ ----
-      // İstek artık doğru endpoint olan /token'a gidiyor.
       const response = await axios.post(`${apiUrl}/token`, params);
-      // ------------------------------------------
-
       localStorage.setItem('userToken', response.data.access_token);
       onLoginSuccess(response.data.access_token);
     } catch (error) {

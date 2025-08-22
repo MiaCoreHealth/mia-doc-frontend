@@ -1,5 +1,3 @@
-// frontend/src/VerifyEmail.js
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -14,11 +12,9 @@ function VerifyEmail() {
       setMessage('Doğrulama linki geçersiz veya eksik.');
       return;
     }
-
     const verifyToken = async () => {
-      const apiUrl = process.env.REACT_APP_API_URL;
+      const apiUrl = import.meta.env.VITE_API_URL;
       try {
-        // Backend'deki /verify-email/ endpoint'ine token ile istek gönderiyoruz
         await axios.get(`${apiUrl}/verify-email/`, {
           params: { token: token }
         });
@@ -28,7 +24,6 @@ function VerifyEmail() {
         setMessage(`Doğrulama başarısız: ${errorMsg}`);
       }
     };
-
     verifyToken();
   }, [searchParams]);
 
