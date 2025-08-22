@@ -1,11 +1,10 @@
-// frontend/src/Dashboard.js
+// frontend/src/Dashboard.jsx
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import History from './History';
-// Avatar resmini import ediyoruz
-import miaDocAvatar from './images/mia-doc_avatar.png'; 
+import History from './History.jsx';
+// Avatar import satırını buradan kaldırıyoruz.
 
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
@@ -107,8 +106,9 @@ function Dashboard({ handleLogout }) {
         <div className="card-body">
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {/* Eğer mesaj MİA-DOC'tan ise, avatarı göster */}
-              {msg.sender === 'mia-doc' && <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />}
+              {/* ---- DEĞİŞİKLİK BURADA ---- */}
+              {/* Avatarı artık doğrudan public yolundan çağırıyoruz */}
+              {msg.sender === 'mia-doc' && <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />}
               
               <div className={`message-bubble ${msg.sender}`}>
                 {msg.text}
@@ -117,7 +117,8 @@ function Dashboard({ handleLogout }) {
           ))}
           {isLoading && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />
+               {/* ---- VE BURADA ---- */}
+               <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
                </div>
