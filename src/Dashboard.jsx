@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
+import miaDocAvatar from './images/mia-doc_avatar.png'; 
 
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(""); // YENİ: Kullanıcının yazdığı soruyu tutar
+  const [currentQuestion, setCurrentQuestion] = useState("");
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
@@ -20,12 +21,30 @@ function Dashboard({ handleLogout }) {
   
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
-      // ... (Bu fonksiyon aynı, değişiklik yok)
+      const token = localStorage.getItem('userToken');
+      if (!token) { handleLogout(); return; }
+      
+      const apiUrl = import.meta.env.VITE_API_URL;
+      try {
+        const response = await axios.get(`${apiUrl}/users/me/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const fetchedUser = response.data;
+        setUser(fetchedUser);
+        setMessages([
+          {
+            sender: 'mia-doc',
+            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
+          }
+        ]);
+      } catch (error) {
+        console.error("Kullanıcı bilgisi alınamadı:", error);
+        handleLogout();
+      }
     };
     fetchUserAndWelcome();
   }, [handleLogout]);
 
-  // YENİ: Hem dosya hem de metin göndermek için ortak fonksiyon
   const sendMessageToApi = async ({ file, question, history }) => {
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
@@ -36,10 +55,10 @@ function Dashboard({ handleLogout }) {
     }
     if (question) {
       setMessages(prev => [...prev, { sender: 'user', text: question }]);
-      setCurrentQuestion(""); // Yazı kutusunu temizle
+      setCurrentQuestion("");
     }
     
-    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]); // Düşünüyorum...
+    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
 
     const formData = new FormData();
     if (file) {
@@ -55,10 +74,9 @@ function Dashboard({ handleLogout }) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      // "Düşünüyorum..." mesajını silip yerine gerçek cevabı koy
       setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
       
-      if (file) { // Sadece ilk analiz geçmişi yeniler
+      if (file) {
         setHistoryKey(prevKey => prevKey + 1);
       }
     } catch (error) {
@@ -72,7 +90,6 @@ function Dashboard({ handleLogout }) {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // İlk mesajlar hariç tüm geçmişi gönder
       const historyToSend = messages.slice(1);
       sendMessageToApi({ file: file, history: historyToSend });
     }
@@ -81,7 +98,6 @@ function Dashboard({ handleLogout }) {
   const handleSendQuestion = (event) => {
     event.preventDefault();
     if (!currentQuestion.trim()) return;
-    // İlk mesajlar hariç tüm geçmişi gönder
     const historyToSend = messages.slice(1);
     sendMessageToApi({ question: currentQuestion, history: historyToSend });
   };
@@ -89,24 +105,37 @@ function Dashboard({ handleLogout }) {
   return (
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
-        {/* ... (Navbar aynı) ... */}
+        <div className="container-fluid">
+          <span className="navbar-brand">
+            {user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}
+          </span>
+          <div>
+            <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
+            <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
+          </div>
+        </div>
       </nav>
-      
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
-          {/* ... (Mesajları gösterme kısmı aynı) ... */}
+          {messages.map((msg, index) => (
+            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
+              {msg.sender === 'mia-doc' && <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />}
+              <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
+            </div>
+          ))}
+          {isLoading && (
+             <div className="d-flex align-items-end mb-3 justify-content-start">
+               <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />
+               <div className="message-bubble mia-doc">
+                 <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
+               </div>
+             </div>
+          )}
         </div>
       </div>
-      
-      {/* --- YENİ SOHBET GİRİŞ ALANI --- */}
       <form onSubmit={handleSendQuestion} className="input-group mb-3">
-        {/* Dosya yükleme butonu */}
-        <label className="btn btn-secondary" htmlFor="fileInput">
-          📎 Rapor Yükle
-        </label>
+        <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
         <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
-        
-        {/* Soru yazma alanı */}
         <input 
           type="text" 
           className="form-control" 
@@ -115,14 +144,14 @@ function Dashboard({ handleLogout }) {
           onChange={(e) => setCurrentQuestion(e.target.value)}
           disabled={isLoading}
         />
-        {/* Gönder butonu */}
         <button className="btn btn-primary" type="submit" disabled={isLoading}>
           {isLoading ? '...' : 'Gönder'}
         </button>
       </form>
-
       <History key={historyKey} />
     </div>
   );
 }
+
+// BU SATIR EN ÖNEMLİSİ
 export default Dashboard;
