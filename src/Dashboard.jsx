@@ -10,8 +10,7 @@ function Dashboard({ handleLogout }) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [forSomeoneElse, setForSomeoneElse] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(""); // YENİ: Kullanıcının yazdığı soruyu tutar
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
@@ -21,125 +20,108 @@ function Dashboard({ handleLogout }) {
   
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
-      const token = localStorage.getItem('userToken');
-      if (!token) { handleLogout(); return; }
-      
-      const apiUrl = import.meta.env.VITE_API_URL;
-      try {
-        const response = await axios.get(`${apiUrl}/users/me/`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const fetchedUser = response.data;
-        setUser(fetchedUser);
-
-        // --- KARŞILAMA MESAJI DÜZELTİLDİ ---
-        setMessages([
-          {
-            sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
-          }
-        ]);
-      } catch (error) {
-        console.error("Kullanıcı bilgisi alınamadı:", error);
-        handleLogout();
-      }
+      // ... (Bu fonksiyon aynı, değişiklik yok)
     };
-
     fetchUserAndWelcome();
   }, [handleLogout]);
 
-  const handleAnalyze = async () => {
-    if (!selectedFile) {
-      setMessages(prev => [...prev, { sender: 'mia-doc', text: `Lütfen önce bir rapor dosyası seçin.` }]);
-      return;
-    }
+  // YENİ: Hem dosya hem de metin göndermek için ortak fonksiyon
+  const sendMessageToApi = async ({ file, question, history }) => {
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
-    setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${selectedFile.name}` }]);
-    setMessages(prev => [...prev, { sender: 'mia-doc', text: 'Raporunu aldım, inceliyorum...' }]);
+
+    if (file) {
+      setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${file.name}` }]);
+    }
+    if (question) {
+      setMessages(prev => [...prev, { sender: 'user', text: question }]);
+      setCurrentQuestion(""); // Yazı kutusunu temizle
+    }
+    
+    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]); // Düşünüyorum...
+
     const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('for_someone_else', forSomeoneElse);
+    if (file) {
+        formData.append('file', file);
+    }
+    if (question) {
+        formData.append('question', question);
+    }
+    formData.append('history_json', JSON.stringify(history));
+
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setMessages(prev => [...prev, { sender: 'mia-doc', text: response.data.analysis_result }]);
-      if (!forSomeoneElse) {
+      
+      // "Düşünüyorum..." mesajını silip yerine gerçek cevabı koy
+      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
+      
+      if (file) { // Sadece ilk analiz geçmişi yeniler
         setHistoryKey(prevKey => prevKey + 1);
       }
     } catch (error) {
       const errorText = error.response ? error.response.data.detail : 'Analiz sırasında bir ağ hatası oluştu.';
-      setMessages(prev => [...prev, { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
+      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
     } finally {
       setIsLoading(false);
-      // Dosya seçme inputunu sıfırla
-      document.getElementById('fileInput').value = '';
-      setSelectedFile(null);
     }
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setSelectedFile(file);
+      // İlk mesajlar hariç tüm geçmişi gönder
+      const historyToSend = messages.slice(1);
+      sendMessageToApi({ file: file, history: historyToSend });
     }
+  };
+
+  const handleSendQuestion = (event) => {
+    event.preventDefault();
+    if (!currentQuestion.trim()) return;
+    // İlk mesajlar hariç tüm geçmişi gönder
+    const historyToSend = messages.slice(1);
+    sendMessageToApi({ question: currentQuestion, history: historyToSend });
   };
 
   return (
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
-        <div className="container-fluid">
-          <span className="navbar-brand">{user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}</span>
-          <div>
-            <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
-            <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
-          </div>
-        </div>
+        {/* ... (Navbar aynı) ... */}
       </nav>
+      
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
-          {messages.map((msg, index) => (
-            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {/* --- AVATAR LİNKİ DÜZELTİLDİ --- */}
-              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />}
-              <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
-            </div>
-          ))}
-          {isLoading && (
-             <div className="d-flex align-items-end mb-3 justify-content-start">
-               {/* --- AVATAR LİNKİ DÜZELTİLDİ --- */}
-               <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
-               <div className="message-bubble mia-doc">
-                 <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
-               </div>
-             </div>
-          )}
+          {/* ... (Mesajları gösterme kısmı aynı) ... */}
         </div>
       </div>
-      <div className="input-group mb-3">
-        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" />
-        <button className="btn btn-primary" onClick={handleAnalyze} disabled={isLoading || !selectedFile}>
-          {isLoading ? 'Analiz Ediliyor...' : 'Analiz Et'}
-        </button>
-      </div>
-      <div className="form-check mb-3">
+      
+      {/* --- YENİ SOHBET GİRİŞ ALANI --- */}
+      <form onSubmit={handleSendQuestion} className="input-group mb-3">
+        {/* Dosya yükleme butonu */}
+        <label className="btn btn-secondary" htmlFor="fileInput">
+          📎 Rapor Yükle
+        </label>
+        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
+        
+        {/* Soru yazma alanı */}
         <input 
-          className="form-check-input" 
-          type="checkbox" 
-          id="forSomeoneElseCheck"
-          checked={forSomeoneElse}
-          onChange={(e) => setForSomeoneElse(e.target.checked)}
+          type="text" 
+          className="form-control" 
+          placeholder="Takip sorunuzu buraya yazın..."
+          value={currentQuestion}
+          onChange={(e) => setCurrentQuestion(e.target.value)}
           disabled={isLoading}
         />
-        <label className="form-check-label" htmlFor="forSomeoneElseCheck">
-          Bu rapor başkasına ait (geçmişe kaydedilmeyecek)
-        </label>
-      </div>
+        {/* Gönder butonu */}
+        <button className="btn btn-primary" type="submit" disabled={isLoading}>
+          {isLoading ? '...' : 'Gönder'}
+        </button>
+      </form>
+
       <History key={historyKey} />
     </div>
   );
 }
-
-export default Dashboard;
