@@ -1,5 +1,3 @@
-// frontend/src/Dashboard.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -12,13 +10,14 @@ function Dashboard({ handleLogout }) {
   const [historyKey, setHistoryKey] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(""); // Takip sorusu için state
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
-  
+
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
       const token = localStorage.getItem('userToken');
@@ -34,11 +33,10 @@ function Dashboard({ handleLogout }) {
         });
         const fetchedUser = response.data;
         setUser(fetchedUser);
-
         setMessages([
           {
             sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MiaCore Health Sağlık Asistanıyım. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
+            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MiaCore Health Sağlık Asistanıyım. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.`
           }
         ]);
       } catch (error) {
@@ -46,61 +44,76 @@ function Dashboard({ handleLogout }) {
         handleLogout();
       }
     };
-
     fetchUserAndWelcome();
   }, [handleLogout]);
 
-  const handleAnalyze = async () => {
-    if (!selectedFile) {
-      setMessages(prev => [...prev, { sender: 'mia-doc', text: `Lütfen önce bir rapor dosyası seçin.` }]);
-      return;
-    }
+  // Hem dosya hem metin göndermek için ana fonksiyon
+  const sendMessageToApi = async ({ file, question }) => {
+    if (!file && !question) return;
+
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
+
+    // Kullanıcının mesajını hemen ekrana ekle
+    if (file) {
+      setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${file.name}` }]);
+    }
+    if (question) {
+      setMessages(prev => [...prev, { sender: 'user', text: question }]);
+      setCurrentQuestion(""); // Yazı kutusunu temizle
+    }
     
-    setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${selectedFile.name}` }]);
-    setMessages(prev => [...prev, { sender: 'mia-doc', text: 'Raporunu aldım, inceliyorum...' }]);
+    // MİA-DOC'un "düşünüyorum" mesajını ekle
+    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
 
     const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('for_someone_else', forSomeoneElse);
+    // Sohbet geçmişini al (ilk karşılama mesajı hariç)
+    const historyToSend = messages.filter(m => m.text.startsWith('Merhaba') === false);
     
+    if (file) {
+      formData.append('file', file);
+    }
+    if (question) {
+      formData.append('question', question);
+    }
+    formData.append('history_json', JSON.stringify(historyToSend));
+    formData.append('for_someone_else', forSomeoneElse);
+
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = { sender: 'mia-doc', text: response.data.analysis_result };
-        return newMessages;
-      });
-
-      if (!forSomeoneElse) {
+      
+      // "Düşünüyorum..." mesajını silip yerine gerçek cevabı koy
+      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
+      
+      // Eğer bu bir ilk analiz ise (dosya içeriyorsa) ve başkası için değilse, geçmişi yenile
+      if (file && !forSomeoneElse) {
         setHistoryKey(prevKey => prevKey + 1);
       }
     } catch (error) {
       const errorText = error.response ? error.response.data.detail : 'Analiz sırasında bir ağ hatası oluştu.';
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` };
-        return newMessages;
-      });
+      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
     } finally {
       setIsLoading(false);
-      if(document.getElementById('fileInput')) {
+      if (file && document.getElementById('fileInput')) {
         document.getElementById('fileInput').value = '';
       }
-      setSelectedFile(null);
     }
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setSelectedFile(file);
+      sendMessageToApi({ file: file });
     }
+  };
+
+  const handleSendQuestion = (event) => {
+    event.preventDefault();
+    if (!currentQuestion.trim()) return;
+    sendMessageToApi({ question: currentQuestion });
   };
 
   return (
@@ -123,7 +136,7 @@ function Dashboard({ handleLogout }) {
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
-          {isLoading && messages[messages.length -1]?.text === 'Raporunu aldım, inceliyorum...' && (
+          {isLoading && messages[messages.length -1]?.text === '...' && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
                <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
@@ -134,12 +147,22 @@ function Dashboard({ handleLogout }) {
         </div>
       </div>
 
-      <div className="input-group mb-3">
-        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" />
-        <button className="btn btn-primary" onClick={handleAnalyze} disabled={isLoading || !selectedFile}>
-          {isLoading ? 'Analiz Ediliyor...' : 'Analiz Et'}
+      <form onSubmit={handleSendQuestion} className="input-group mb-3">
+        <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
+        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
+        
+        <input 
+          type="text" 
+          className="form-control" 
+          placeholder="Takip sorunuzu buraya yazın..."
+          value={currentQuestion}
+          onChange={(e) => setCurrentQuestion(e.target.value)}
+          disabled={isLoading}
+        />
+        <button className="btn btn-primary" type="submit" disabled={isLoading || !currentQuestion.trim()}>
+          {isLoading ? '...' : 'Gönder'}
         </button>
-      </div>
+      </form>
 
       <div className="form-check mb-3">
         <input 
