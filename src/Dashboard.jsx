@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
-import miaDocAvatar from './images/mia-doc_avatar.png'; 
+// Artık avatarı buradan import etmiyoruz.
 
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
@@ -42,6 +42,7 @@ function Dashboard({ handleLogout }) {
         handleLogout();
       }
     };
+
     fetchUserAndWelcome();
   }, [handleLogout]);
 
@@ -92,6 +93,7 @@ function Dashboard({ handleLogout }) {
     if (file) {
       const historyToSend = messages.slice(1);
       sendMessageToApi({ file: file, history: historyToSend });
+      event.target.value = null; // Dosya seçildikten sonra input'u sıfırla
     }
   };
 
@@ -119,13 +121,13 @@ function Dashboard({ handleLogout }) {
         <div className="card-body">
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />}
+              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />}
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src={miaDocAvatar} alt="MİA-DOC Avatar" className="avatar" />
+               <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
                </div>
@@ -153,5 +155,4 @@ function Dashboard({ handleLogout }) {
   );
 }
 
-// BU SATIR EN ÖNEMLİSİ
 export default Dashboard;
