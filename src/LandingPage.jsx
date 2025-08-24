@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 function LandingPage() {
   return (
     <div className="text-center landing-container">
-      <img src="/images/mia-doc_avatar.png" alt="MiaCore Health Asistanı" className="landing-avatar mb-4" />
+      <img src="https://i.imgur.com/OnfAvOo.png" alt="MiaCore Health Asistanı" className="landing-avatar mb-4" />
       <h2 className="mb-3">Merhaba, Ben MiaCore Health Sağlık Asistanıyım!</h2>
       <p className="lead text-muted mb-4">Sizin için sağlık raporlarınızı saniyeler içinde, anlaşılır bir dilde yorumlayabilirim.</p>
       <div className="d-grid gap-2 d-sm-flex justify-content-sm-center">
