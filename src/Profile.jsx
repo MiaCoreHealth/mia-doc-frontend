@@ -31,7 +31,6 @@ function Profile() {
         const data = response.data;
         const formattedData = {};
         for (const key in profileData) {
-          // Gelen veri null (boş) ise, onu boş string'e çeviriyoruz ki formda hata vermesin
           formattedData[key] = data[key] || '';
         }
         setProfileData(formattedData);
@@ -42,14 +41,18 @@ function Profile() {
       }
     };
     fetchProfile();
-  }, []); // Boş array, bu fonksiyonun sadece sayfa ilk yüklendiğinde çalışmasını sağlar
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfileData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    setProfileData(prevState => {
+      const newState = { ...prevState, [name]: value };
+      // Eğer cinsiyet "Kadın" değilse, hamilelik durumunu sıfırla
+      if (name === 'gender' && value !== 'Kadın') {
+        newState.pregnancy_status = '';
+      }
+      return newState;
+    });
   };
 
   const handleSave = async (event) => {
@@ -134,16 +137,22 @@ function Profile() {
               <option value="Düzenli">Düzenli</option>
             </select>
           </div>
-          <div className="col-md-4">
-            <label htmlFor="pregnancy_status" className="form-label">Hamilelik Durumu</label>
-            <select className="form-select" id="pregnancy_status" name="pregnancy_status" value={profileData.pregnancy_status} onChange={handleChange}>
-              <option value="">Seçiniz...</option>
-              <option value="Yok">Yok</option>
-              <option value="Hamile">Hamile</option>
-              <option value="Emziriyor">Emziriyor</option>
-            </select>
-          </div>
+          
+          {/* Sadece Cinsiyet 'Kadın' seçilirse bu alanı göster */}
+          {profileData.gender === 'Kadın' && (
+            <div className="col-md-4">
+              <label htmlFor="pregnancy_status" className="form-label">Hamilelik Durumu</label>
+              <select className="form-select" id="pregnancy_status" name="pregnancy_status" value={profileData.pregnancy_status} onChange={handleChange}>
+                <option value="">Seçiniz...</option>
+                <option value="Yok">Yok</option>
+                <option value="Hamile">Hamile</option>
+                <option value="Emziriyor">Emziriyor</option>
+              </select>
+            </div>
+          )}
+
           {message && <div className={`alert mt-3 ${message.includes('başarıyla') ? 'alert-success' : 'alert-danger'}`}>{message}</div>}
+          
           <div className="col-12 d-flex justify-content-end mt-4">
             <Link to="/" className="btn btn-secondary me-2">Kontrol Paneline Dön</Link>
             <button type="submit" className="btn btn-primary">Bilgileri Kaydet</button>
