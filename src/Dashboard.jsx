@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
 
-// --- YENİ: Sağlık Paneli Bileşeni ---
+// --- Sağlık Paneli Bileşeni (Değişiklik yok) ---
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
   }
-
-  // Yaş Hesaplama Fonksiyonu
   const calculateAge = (birthDate) => {
     if (!birthDate) return null;
     const today = new Date();
@@ -21,8 +19,6 @@ const HealthPanel = ({ user }) => {
     }
     return age;
   };
-
-  // VKİ Hesaplama ve Yorumlama Fonksiyonu
   const calculateBMI = (weight, height) => {
     if (!weight || !height) return { bmi: null, interpretation: 'Profilinizde boy ve kilo bilgisi eksik.' };
     const heightInMeters = height / 100;
@@ -34,54 +30,53 @@ const HealthPanel = ({ user }) => {
     else interpretation = 'Obez';
     return { bmi, interpretation };
   };
-
   const age = calculateAge(user.date_of_birth);
   const { bmi, interpretation } = calculateBMI(user.weight_kg, user.height_cm);
-
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
-
   return (
     <div className="card shadow-sm mb-4">
-      <div className="card-header">
-        <h5>Sağlık Paneli</h5>
-      </div>
+      <div className="card-header"><h5>Sağlık Paneli</h5></div>
       <div className="card-body">
         <div className="row text-center">
-          <div className="col-md-4 border-end">
-            <h6 className="text-muted">Hoş Geldiniz</h6>
-            <h4>{getUsernameFromEmail(user.email)}</h4>
-          </div>
-          <div className="col-md-4 border-end">
-            <h6 className="text-muted">Yaş / VKİ</h6>
-            <h4>
-              {age ? `${age} Yaş` : 'N/A'} / 
-              <span title={interpretation}>{bmi || 'N/A'}</span>
-            </h4>
-          </div>
-          <div className="col-md-4">
-            <h6 className="text-muted">Bilinen Kronik Hastalıklar</h6>
-            <h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>
-              {user.chronic_diseases || 'Belirtilmemiş'}
-            </h5>
-          </div>
+          <div className="col-md-4 border-end"><h6 className="text-muted">Hoş Geldiniz</h6><h4>{getUsernameFromEmail(user.email)}</h4></div>
+          <div className="col-md-4 border-end"><h6 className="text-muted">Yaş / VKİ</h6><h4>{age ? `${age} Yaş` : 'N/A'} / <span title={interpretation}>{bmi || 'N/A'}</span></h4></div>
+          <div className="col-md-4"><h6 className="text-muted">Bilinen Kronik Hastalıklar</h6><h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>{user.chronic_diseases || 'Belirtilmemiş'}</h5></div>
         </div>
       </div>
     </div>
   );
 };
 
+// --- YENİ: Günün Tavsiyesi Bileşeni ---
+const HealthTip = ({ tip, isLoading }) => {
+    return (
+        <div className="card shadow-sm mb-4 bg-light border-primary">
+            <div className="card-body text-center">
+                <h6 className="card-title text-primary">💡 Günün Sağlık Tavsiyesi</h6>
+                {isLoading ? (
+                    <p className="card-text fst-italic">Kişisel tavsiyeniz oluşturuluyor...</p>
+                ) : (
+                    <p className="card-text fw-bold">{tip}</p>
+                )}
+            </div>
+        </div>
+    );
+};
 
 function Dashboard({ handleLogout }) {
-  const [user, setUser] = useState(null); // Artık tam profil bilgisini tutacak
+  const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
+  // YENİ: Tavsiye için state'ler
+  const [healthTip, setHealthTip] = useState("");
+  const [isTipLoading, setIsTipLoading] = useState(true);
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
@@ -90,42 +85,61 @@ function Dashboard({ handleLogout }) {
   };
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      const token = localStorage.getItem('userToken');
-      if (!token) { 
-        handleLogout(); 
-        return; 
-      }
-      
-      // DEĞİŞİKLİK: /users/me yerine /profile/me endpoint'ini kullanıyoruz
-      const apiUrl = `${import.meta.env.VITE_API_URL}/profile/me/`;
+    const token = localStorage.getItem('userToken');
+    if (!token) { 
+      handleLogout(); 
+      return; 
+    }
+    const apiUrl = import.meta.env.VITE_API_URL;
+
+    const fetchInitialData = async () => {
+      // Profil bilgisini ve günün tavsiyesini aynı anda çekelim
       try {
-        const response = await axios.get(apiUrl, {
+        // Profil Bilgisi İsteği
+        const profilePromise = axios.get(`${apiUrl}/profile/me/`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const fetchedUser = response.data;
-        setUser(fetchedUser); // Tam profil bilgisi state'e kaydedildi
+        // Günün Tavsiyesi İsteği
+        const tipPromise = axios.get(`${apiUrl}/health-tip/`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
+        
+        // Profil verilerini işle
+        const fetchedUser = profileResponse.data;
+        setUser(fetchedUser);
         setMessages([
           {
             sender: 'mia-doc',
             text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MiaCore Health Sağlık Asistanıyım. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.`
           }
         ]);
+
+        // Tavsiye verisini işle
+        setHealthTip(tipResponse.data.tip);
+        setIsTipLoading(false);
+
       } catch (error) {
-        console.error("Kullanıcı profili alınamadı:", error);
-        handleLogout();
+        console.error("Başlangıç verileri alınamadı:", error);
+        // Bir hata olursa genel bir tavsiye göster
+        setHealthTip("Sağlıklı bir gün geçirmeniz dileğiyle!");
+        setIsTipLoading(false);
+        // Eğer profil hatasıysa çıkış yap
+        if (!user) {
+            handleLogout();
+        }
       }
     };
-    fetchUserProfile();
+    fetchInitialData();
   }, [handleLogout]);
 
+  // sendMessageToApi ve diğer handle fonksiyonları aynı, değişiklik yok...
   const sendMessageToApi = async ({ file, question }) => {
     if (!file && (!question || !question.trim())) return;
-
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
-
     if (file) {
       setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${file.name}` }]);
     }
@@ -133,25 +147,18 @@ function Dashboard({ handleLogout }) {
       setMessages(prev => [...prev, { sender: 'user', text: question }]);
       setCurrentQuestion("");
     }
-    
     setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
-
     const formData = new FormData();
     const historyToSend = messages.filter(m => !m.text.startsWith('Merhaba'));
-    
     if (file) formData.append('file', file);
     if (question) formData.append('question', question);
-    
     formData.append('history_json', JSON.stringify(historyToSend));
     formData.append('for_someone_else', forSomeoneElse);
-
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
       setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
-      
       if (file && !forSomeoneElse) {
         setHistoryKey(prevKey => prevKey + 1);
       }
@@ -165,14 +172,10 @@ function Dashboard({ handleLogout }) {
       }
     }
   };
-
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      sendMessageToApi({ file: file });
-    }
+    if (file) { sendMessageToApi({ file: file }); }
   };
-
   const handleSendQuestion = (event) => {
     event.preventDefault();
     if (!currentQuestion.trim()) return;
@@ -191,8 +194,10 @@ function Dashboard({ handleLogout }) {
         </div>
       </nav>
       
-      {/* YENİ: Sağlık Paneli buraya eklendi */}
       <HealthPanel user={user} />
+      
+      {/* YENİ: Günün Tavsiyesi buraya eklendi */}
+      <HealthTip tip={healthTip} isLoading={isTipLoading} />
       
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
@@ -216,29 +221,14 @@ function Dashboard({ handleLogout }) {
       <form onSubmit={handleSendQuestion} className="input-group mb-3">
         <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
         <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
-        
-        <input 
-          type="text" 
-          className="form-control" 
-          placeholder="Takip sorunuzu buraya yazın..."
-          value={currentQuestion}
-          onChange={(e) => setCurrentQuestion(e.target.value)}
-          disabled={isLoading}
-        />
+        <input type="text" className="form-control" placeholder="Takip sorunuzu buraya yazın..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading} />
         <button className="btn btn-primary" type="submit" disabled={isLoading || !currentQuestion.trim()}>
           {isLoading ? '...' : 'Gönder'}
         </button>
       </form>
 
       <div className="form-check mb-3">
-        <input 
-          className="form-check-input" 
-          type="checkbox" 
-          id="forSomeoneElseCheck"
-          checked={forSomeoneElse}
-          onChange={(e) => setForSomeoneElse(e.target.checked)}
-          disabled={isLoading}
-        />
+        <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
         <label className="form-check-label" htmlFor="forSomeoneElseCheck">
           Bu rapor başkasına ait (geçmişe kaydedilmeyecek)
         </label>
