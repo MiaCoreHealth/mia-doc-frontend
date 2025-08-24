@@ -73,3 +73,13 @@
   margin-right: 10px;
   object-fit: cover; /* Resmin orantısını korur */
 }
+
+.landing-container {
+  max-width: 600px;
+  margin: 5rem auto; /* Sayfanın ortasına dikey ve yatayda hizalar */
+}
+
+.landing-avatar {
+  width: 120px;
+  height: 120px;
+}
