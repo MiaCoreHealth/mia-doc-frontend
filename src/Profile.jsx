@@ -1,19 +1,26 @@
 // frontend/src/Profile.jsx
 
-import React, a from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 function Profile() {
-  const [profileData, setProfileData] = a.useState({
-    date_of_birth: '', gender: '', height_cm: '', weight_kg: '',
-    pregnancy_status: '', smoking_status: '', alcohol_status: '',
-    chronic_diseases: '', medications: '', family_history: ''
+  const [profileData, setProfileData] = useState({
+    date_of_birth: '',
+    gender: '',
+    height_cm: '',
+    weight_kg: '',
+    pregnancy_status: '',
+    smoking_status: '',
+    alcohol_status: '',
+    chronic_diseases: '',
+    medications: '',
+    family_history: ''
   });
-  const [message, setMessage] = a.useState('');
-  const [isLoading, setIsLoading] = a.useState(true);
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  a.useEffect(() => {
+  useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('userToken');
       const apiUrl = import.meta.env.VITE_API_URL;
@@ -24,6 +31,7 @@ function Profile() {
         const data = response.data;
         const formattedData = {};
         for (const key in profileData) {
+          // Gelen veri null (boş) ise, onu boş string'e çeviriyoruz ki formda hata vermesin
           formattedData[key] = data[key] || '';
         }
         setProfileData(formattedData);
@@ -34,11 +42,14 @@ function Profile() {
       }
     };
     fetchProfile();
-  }, []);
+  }, []); // Boş array, bu fonksiyonun sadece sayfa ilk yüklendiğinde çalışmasını sağlar
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfileData(prevState => ({ ...prevState, [name]: value }));
+    setProfileData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
   const handleSave = async (event) => {
@@ -49,7 +60,9 @@ function Profile() {
     try {
       const dataToSend = { ...profileData };
       for (const key in dataToSend) {
-        if (dataToSend[key] === '') { dataToSend[key] = null; }
+        if (dataToSend[key] === '') {
+          dataToSend[key] = null;
+        }
       }
       await axios.post(`${apiUrl}/profile/me/`, dataToSend, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -69,7 +82,7 @@ function Profile() {
       <div className="card-body">
         <h2 className="card-title">Profil Bilgilerim</h2>
         <p className="card-text text-muted">Bu bilgiler, yapay zekanın size daha kişisel ve doğru yorumlar yapmasına yardımcı olacaktır.</p>
-
+        
         <form onSubmit={handleSave} className="row g-3">
           <div className="col-md-6">
             <label htmlFor="date_of_birth" className="form-label">Doğum Tarihi</label>
