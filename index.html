@@ -1,3 +1,47 @@
+/* ----------------------------------------- */
+/* MIA-DOC TASARIM SİSTEMİ          */
+/* ----------------------------------------- */
+
+/* 1. Renk Paletimizi Tanımlıyoruz */
+:root {
+  --primary-color: #007bff; /* Ana Mavi Renk */
+  --secondary-color: #6c757d; /* Gri Renk */
+  --success-color: #198754; /* Başarı Yeşili */
+  --danger-color: #dc3545; /* Hata Kırmızısı */
+  --light-bg: #f8f9fa; /* Açık Arka Plan Rengi */
+  --dark-text: #212529; /* Koyu Metin Rengi */
+}
+
+/* 2. Yeni Fontumuzu Tüm Uygulamaya Uyguluyoruz */
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--light-bg) !important; /* Arka planı açık gri yap */
+  color: var(--dark-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700; /* Başlıkları daha belirgin yap */
+}
+
+/* 3. Butonlara Animasyon ve Yeni Renk Ekleme */
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.btn-success {
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+}
+
+.btn {
+  transition: all 0.2s ease-in-out; /* Tüm butonlara yumuşak geçiş efekti */
+}
+
+.btn:hover {
+  transform: translateY(-2px); /* Butonun üzerine gelince hafifçe yukarı kalksın */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Hafif bir gölge ekle */
+}
 <!doctype html>
 <html lang="en">
   <head>
