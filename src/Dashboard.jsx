@@ -1,7 +1,10 @@
+// frontend/src/Dashboard.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
+// Artık avatarı import etmiyoruz.
 
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
@@ -29,13 +32,17 @@ function Dashboard({ handleLogout }) {
         const fetchedUser = response.data;
         setUser(fetchedUser);
         setMessages([
-          { sender: 'mia-doc', text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.` }
+          {
+            sender: 'mia-doc',
+            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
+          }
         ]);
       } catch (error) {
         console.error("Kullanıcı bilgisi alınamadı:", error);
         handleLogout();
       }
     };
+
     fetchUserAndWelcome();
   }, [handleLogout]);
 
@@ -53,7 +60,10 @@ function Dashboard({ handleLogout }) {
     formData.append('file', selectedFile);
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
       setMessages(prev => [...prev, { sender: 'mia-doc', text: response.data.analysis_result }]);
       setHistoryKey(prevKey => prevKey + 1);
@@ -77,24 +87,28 @@ function Dashboard({ handleLogout }) {
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          <span className="navbar-brand">{user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}</span>
+          <span className="navbar-brand">
+            {user ? `${getUsernameFromEmail(user.email)} & MİA-DOC` : 'Yükleniyor...'}
+          </span>
           <div>
             <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
-            <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
+            <button onClick[handleLogout] className="btn btn-outline-danger">Çıkış Yap</button>
           </div>
         </div>
       </nav>
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
           {messages.map((msg, index) => (
-            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />}
+            <div key[index] className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
+              {/* ---- DEĞİŞİKLİK BURADA ---- */}
+              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />}
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />
+               {/* ---- VE BURADA ---- */}
+               <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
                </div>
