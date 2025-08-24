@@ -18,11 +18,12 @@ function Dashboard({ handleLogout }) {
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
-
+  
   useEffect(() => {
     const fetchUserAndWelcome = async () => {
       const token = localStorage.getItem('userToken');
       if (!token) { handleLogout(); return; }
+      
       const apiUrl = import.meta.env.VITE_API_URL;
       try {
         const response = await axios.get(`${apiUrl}/users/me/`, {
@@ -30,14 +31,20 @@ function Dashboard({ handleLogout }) {
         });
         const fetchedUser = response.data;
         setUser(fetchedUser);
+
+        // --- KARŞILAMA MESAJI DÜZELTİLDİ ---
         setMessages([
-          { sender: 'mia-doc', text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC...` }
+          {
+            sender: 'mia-doc',
+            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MİA-DOC. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) lütfen aşağıdan seç.`
+          }
         ]);
       } catch (error) {
         console.error("Kullanıcı bilgisi alınamadı:", error);
         handleLogout();
       }
     };
+
     fetchUserAndWelcome();
   }, [handleLogout]);
 
@@ -67,8 +74,9 @@ function Dashboard({ handleLogout }) {
       setMessages(prev => [...prev, { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
     } finally {
       setIsLoading(false);
+      // Dosya seçme inputunu sıfırla
+      document.getElementById('fileInput').value = '';
       setSelectedFile(null);
-      document.getElementById('fileInput').value = ''; // Dosya inputunu temizle
     }
   };
 
@@ -94,13 +102,15 @@ function Dashboard({ handleLogout }) {
         <div className="card-body">
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />}
+              {/* --- AVATAR LİNKİ DÜZELTİLDİ --- */}
+              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />}
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src="/images/mia-doc_avatar.png" alt="MİA-DOC Avatar" className="avatar" />
+               {/* --- AVATAR LİNKİ DÜZELTİLDİ --- */}
+               <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
                </div>
