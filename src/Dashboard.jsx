@@ -125,3 +125,4 @@ function Dashboard({ handleLogout }) {
     </div>
   );
 }
+export default Dashboard;
