@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+// HealthPanel ve HealthTip bileşenleri aynı, değişiklik yok
+
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
@@ -64,6 +66,7 @@ const HealthTip = ({ tip, isLoading }) => {
     );
 };
 
+
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
   const [healthTip, setHealthTip] = useState("");
@@ -110,8 +113,9 @@ function Dashboard({ handleLogout }) {
       <HealthPanel user={user} />
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      <div className="row mt-4">
-        <div className="col-md-4 mb-4">
+      {/* DEĞİŞİKLİK: Kartlar ortalandı ve İlaçlar kartı kaldırıldı */}
+      <div className="row mt-4 justify-content-center">
+        <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Rapor Analizi</h5>
@@ -120,21 +124,12 @@ function Dashboard({ handleLogout }) {
             </div>
           </div>
         </div>
-        <div className="col-md-4 mb-4">
+        <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
               <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın.</p>
               <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla</Link>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4 mb-4">
-          <div className="card h-100 shadow-sm">
-            <div className="card-body text-center d-flex flex-column justify-content-center">
-              <h5 className="card-title">İlaçlarım</h5>
-              <p className="card-text text-muted">İlaçlarınızı kaydedin ve yönetin.</p>
-              <Link to="/ilaclarim" className="btn btn-warning mt-auto">Yönet</Link>
             </div>
           </div>
         </div>

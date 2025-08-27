@@ -7,7 +7,7 @@ import Profile from './Profile';
 import LandingPage from './LandingPage';
 import RaporAnalizi from './RaporAnalizi';
 import SemptomAnalizi from './SemptomAnalizi';
-import Ilaclarim from './Ilaclarim'; // Yeni sayfamızı import ediyoruz
+// Ilaclarim import'u kaldırıldı
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,8 +46,7 @@ function App() {
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
           <Route path="/rapor-analizi" element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
           <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
-          {/* YENİ ROTA */}
-          <Route path="/ilaclarim" element={isAuthenticated ? <Ilaclarim handleLogout={handleLogout} /> : <Navigate to="/" />} />
+          {/* Ilaclarim rotası kaldırıldı */}
         </Routes>
       </div>
     </Router>
