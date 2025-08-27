@@ -42,7 +42,7 @@ const HealthPanel = ({ user }) => {
       <div className="card-header"><h5>Sağlık Paneli</h5></div>
       <div className="card-body">
         <div className="row text-center">
-          <div className="col-md-4 border-end"><h6 className="text-muted">Hoş Geldiniz</h6><h4>{getUsernameFromEmail(user.email)}</h4></div>
+          <div className="col-md-4 border-end"><h6 className="text-muted">Hoş Geldin</h6><h4>{getUsernameFromEmail(user.email)}</h4></div>
           <div className="col-md-4 border-end"><h6 className="text-muted">Yaş / VKİ</h6><h4>{age ? `${age} Yaş` : 'N/A'} / <span title={interpretation}>{bmi || 'N/A'}</span></h4></div>
           <div className="col-md-4"><h6 className="text-muted">Bilinen Kronik Hastalıklar</h6><h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>{user.chronic_diseases || 'Belirtilmemiş'}</h5></div>
         </div>
@@ -51,14 +51,14 @@ const HealthPanel = ({ user }) => {
   );
 };
 
-// --- YENİ: Günün Tavsiyesi Bileşeni ---
+// --- Günün Tavsiyesi Bileşeni (Değişiklik yok) ---
 const HealthTip = ({ tip, isLoading }) => {
     return (
         <div className="card shadow-sm mb-4 bg-light border-primary">
             <div className="card-body text-center">
-                <h6 className="card-title text-primary">💡 Günün Sağlık Tavsiyesi</h6>
+                <h6 className="card-title text-primary">💡 Mia'dan Günün Tavsiyesi</h6>
                 {isLoading ? (
-                    <p className="card-text fst-italic">Kişisel tavsiyeniz oluşturuluyor...</p>
+                    <p className="card-text fst-italic">Sana özel bir tavsiye hazırlıyorum...</p>
                 ) : (
                     <p className="card-text fw-bold">{tip}</p>
                 )}
@@ -74,7 +74,6 @@ function Dashboard({ handleLogout }) {
   const [historyKey, setHistoryKey] = useState(0);
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
-  // YENİ: Tavsiye için state'ler
   const [healthTip, setHealthTip] = useState("");
   const [isTipLoading, setIsTipLoading] = useState(true);
 
@@ -93,39 +92,29 @@ function Dashboard({ handleLogout }) {
     const apiUrl = import.meta.env.VITE_API_URL;
 
     const fetchInitialData = async () => {
-      // Profil bilgisini ve günün tavsiyesini aynı anda çekelim
       try {
-        // Profil Bilgisi İsteği
-        const profilePromise = axios.get(`${apiUrl}/profile/me/`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        // Günün Tavsiyesi İsteği
-        const tipPromise = axios.get(`${apiUrl}/health-tip/`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
+        const profilePromise = axios.get(`${apiUrl}/profile/me/`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const tipPromise = axios.get(`${apiUrl}/health-tip/`, { headers: { 'Authorization': `Bearer ${token}` } });
         const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
         
-        // Profil verilerini işle
         const fetchedUser = profileResponse.data;
         setUser(fetchedUser);
+        
+        // --- YENİ KARŞILAMA MESAJI ---
         setMessages([
           {
             sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}, ben MiaCore Health Sağlık Asistanıyım. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.`
+            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}! Ben kişisel sağlık asistanın Mia. Sana nasıl yardımcı olabilirim? Analiz etmemi istediğin bir raporu yükleyebilir veya aklına takılan bir sağlık sorusunu sorabilirsin.`
           }
         ]);
 
-        // Tavsiye verisini işle
         setHealthTip(tipResponse.data.tip);
         setIsTipLoading(false);
 
       } catch (error) {
         console.error("Başlangıç verileri alınamadı:", error);
-        // Bir hata olursa genel bir tavsiye göster
-        setHealthTip("Sağlıklı bir gün geçirmeniz dileğiyle!");
+        setHealthTip("Sağlıklı bir gün geçirmen dileğiyle!");
         setIsTipLoading(false);
-        // Eğer profil hatasıysa çıkış yap
         if (!user) {
             handleLogout();
         }
@@ -134,7 +123,7 @@ function Dashboard({ handleLogout }) {
     fetchInitialData();
   }, [handleLogout]);
 
-  // sendMessageToApi ve diğer handle fonksiyonları aynı, değişiklik yok...
+  // Diğer fonksiyonlar (sendMessageToApi vb.) aynı, değişiklik yok
   const sendMessageToApi = async ({ file, question }) => {
     if (!file && (!question || !question.trim())) return;
     setIsLoading(true);
@@ -149,7 +138,7 @@ function Dashboard({ handleLogout }) {
     }
     setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
     const formData = new FormData();
-    const historyToSend = messages.filter(m => !m.text.startsWith('Merhaba'));
+    const historyToSend = messages.filter(m => m.text.startsWith('Merhaba') === false);
     if (file) formData.append('file', file);
     if (question) formData.append('question', question);
     formData.append('history_json', JSON.stringify(historyToSend));
@@ -186,7 +175,8 @@ function Dashboard({ handleLogout }) {
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          <span className="navbar-brand">MiaCore Health</span>
+          {/* Navbar başlığını da güncelleyelim */}
+          <span className="navbar-brand">Miacore Health & Asistanın Mia</span>
           <div>
             <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
             <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
@@ -195,21 +185,19 @@ function Dashboard({ handleLogout }) {
       </nav>
       
       <HealthPanel user={user} />
-      
-      {/* YENİ: Günün Tavsiyesi buraya eklendi */}
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
       
       <div className="chat-window card shadow-sm mb-3">
         <div className="card-body">
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />}
+              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && messages[messages.length - 1]?.text === '...' && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src="https://i.imgur.com/OnfAvOo.png" alt="MİA-DOC Avatar" className="avatar" />
+               <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
                </div>
@@ -221,7 +209,7 @@ function Dashboard({ handleLogout }) {
       <form onSubmit={handleSendQuestion} className="input-group mb-3">
         <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
         <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
-        <input type="text" className="form-control" placeholder="Takip sorunuzu buraya yazın..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading} />
+        <input type="text" className="form-control" placeholder="Mia'ya bir soru sor..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading} />
         <button className="btn btn-primary" type="submit" disabled={isLoading || !currentQuestion.trim()}>
           {isLoading ? '...' : 'Gönder'}
         </button>
