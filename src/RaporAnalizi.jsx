@@ -106,13 +106,24 @@ function RaporAnalizi({ handleLogout }) {
         <div className="card-body">
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
+              {/* --- DEĞİŞİKLİK BURADA --- */}
+              {msg.sender === 'mia-doc' && 
+                <img 
+                  src="https://i.imgur.com/OnfAvOo.png" 
+                  alt="Mia Avatar" 
+                  style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} 
+                />
+              }
               <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
             </div>
           ))}
           {isLoading && messages[messages.length - 1]?.text === '...' && (
              <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
+               <img 
+                 src="https://i.imgur.com/OnfAvOo.png" 
+                 alt="Mia Avatar" 
+                 style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} 
+               />
                <div className="message-bubble mia-doc">
                  <span className="spinner-border spinner-border-sm"></span> Mia düşünüyor...
                </div>
