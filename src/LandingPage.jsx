@@ -1,17 +1,27 @@
-// frontend/src/LandingPage.jsx
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 function LandingPage() {
   return (
-    <div className="text-center landing-container">
-      <img src="https://i.imgur.com/OnfAvOo.png" alt="MiaCore Health Asistanı" className="landing-avatar mb-4" />
-      <h2 className="mb-3">Merhaba, Ben MiaCore Health Sağlık Asistanıyım!</h2>
-      <p className="lead text-muted mb-4">Sizin için sağlık raporlarınızı saniyeler içinde, anlaşılır bir dilde yorumlayabilirim.</p>
-      <div className="d-grid gap-2 d-sm-flex justify-content-sm-center">
-        <Link to="/register" className="btn btn-primary btn-lg px-4 gap-3">Kayıt Ol</Link>
-        <Link to="/login" className="btn btn-outline-secondary btn-lg px-4">Giriş Yap</Link>
+    <div className="container mt-5 text-center">
+      <div className="landing-card card shadow-lg p-4 mx-auto" style={{ maxWidth: '500px' }}>
+        <img 
+          src="https://i.imgur.com/OnfAvOo.png" 
+          alt="Mia - Kişisel Sağlık Asistanı" 
+          className="landing-avatar mb-4" 
+        />
+        {/* YENİ KARŞILAMA METNİ */}
+        <h1 className="card-title h2">Merhaba, ben Mia!</h1>
+        <p className="card-text lead text-muted">
+          Kişisel sağlık asistanın olarak, tıbbi raporlarını anlamana ve sağlık verilerini takip etmene yardımcı olmak için buradayım.
+        </p>
+        <p className="card-text">
+          Başlamak için lütfen giriş yap veya aramıza katıl.
+        </p>
+        <div className="d-grid gap-2 col-8 mx-auto mt-4">
+          <Link to="/login" className="btn btn-primary btn-lg">Giriş Yap</Link>
+          <Link to="/register" className="btn btn-outline-secondary">Kayıt Ol</Link>
+        </div>
       </div>
     </div>
   );
