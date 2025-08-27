@@ -71,7 +71,7 @@ function Dashboard({ handleLogout }) {
   const [healthTip, setHealthTip] = useState("");
   const [isTipLoading, setIsTipLoading] = useState(true);
 
-  // --- GÜNCELLENMİŞ useEffect YAPISI ---
+  // --- ANA VERİLERİ ÇEKMEK İÇİN useEffect ---
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) { 
@@ -80,43 +80,7 @@ function Dashboard({ handleLogout }) {
     }
     const apiUrl = import.meta.env.VITE_API_URL;
 
-    // Bildirimleri kontrol eden fonksiyon
-    const checkMedicationTimes = async () => {
-      if (Notification.permission !== 'granted') return;
-      try {
-        const response = await axios.get(`${apiUrl}/medications/`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const meds = response.data;
-        const now = new Date();
-        const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-        const currentDate = now.toISOString().split('T')[0];
-
-        meds.forEach(med => {
-          const times = med.times.split(',').map(t => t.trim());
-          if (times.includes(currentTime)) {
-            const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
-            if (!sessionStorage.getItem(notificationKey)) {
-              const notification = new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
-                body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
-                icon: 'https://i.imgur.com/OnfAvOo.png',
-                tag: notificationKey
-              });
-              // Bildirime tıklandığında sekmeye odaklan
-              notification.onclick = () => {
-                window.focus();
-              };
-              sessionStorage.setItem(notificationKey, 'true');
-            }
-          }
-        });
-      } catch (error) {
-        console.error("İlaç hatırlatma servisi hatası:", error);
-      }
-    };
-
-    // Ana verileri çeken ve ardından hatırlatma servisini başlatan fonksiyon
-    const fetchInitialDataAndStartServices = async () => {
+    const fetchInitialData = async () => {
       try {
         const profilePromise = axios.get(`${apiUrl}/profile/me/`, { headers: { 'Authorization': `Bearer ${token}` } });
         const tipPromise = axios.get(`${apiUrl}/health-tip/`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -125,32 +89,72 @@ function Dashboard({ handleLogout }) {
         setUser(profileResponse.data);
         setHealthTip(tipResponse.data.tip);
         setIsTipLoading(false);
-        
-        // Veriler başarıyla yüklendikten sonra hatırlatma servisini başlat
-        checkMedicationTimes(); // İlk kontrol
-        const intervalId = setInterval(checkMedicationTimes, 10000); // Her 10 saniyede bir kontrol
-        
-        // Component kaldırıldığında interval'ı temizle
-        return () => clearInterval(intervalId);
 
       } catch (error) {
         console.error("Başlangıç verileri alınamadı:", error);
         handleLogout();
       }
     };
+    fetchInitialData();
+  }, [handleLogout]);
 
-    const cleanupPromise = fetchInitialDataAndStartServices();
+  // --- BİLDİRİM SERVİSİ İÇİN AYRI useEffect ---
+  // Bu bölüm, sadece 'user' verisi başarıyla yüklendikten sonra çalışır.
+  useEffect(() => {
+    // Eğer kullanıcı bilgisi yoksa veya bildirimlere izin verilmediyse servisi başlatma
+    if (!user || Notification.permission !== 'granted') {
+      if(user) console.log("Bildirim servisi başlatılmadı (izin verilmemiş).");
+      return;
+    }
 
-    // useEffect'in cleanup fonksiyonu
-    return () => {
-        cleanupPromise.then(cleanup => {
-            if (cleanup) {
-                cleanup();
+    const token = localStorage.getItem('userToken');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    console.log("Bildirim servisi başlatıldı. Her 10 saniyede bir kontrol edilecek.");
+
+    const checkMedicationTimes = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/medications/`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const meds = response.data;
+        const now = new Date();
+        const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        const currentDate = now.toISOString().split('T')[0];
+
+        console.log(`Kontrol saati: ${currentTime}. Kayıtlı ${meds.length} ilaç kontrol ediliyor...`);
+
+        meds.forEach(med => {
+          const times = med.times.split(',').map(t => t.trim());
+          if (times.includes(currentTime)) {
+            console.log(`Eşleşme bulundu: ${med.name} için saat ${currentTime}`);
+            const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
+            
+            if (!sessionStorage.getItem(notificationKey)) {
+              console.log(`Bildirim gönderiliyor: ${notificationKey}`);
+              const notification = new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
+                body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
+                icon: 'https://i.imgur.com/OnfAvOo.png',
+                tag: notificationKey
+              });
+              notification.onclick = () => { window.focus(); };
+              sessionStorage.setItem(notificationKey, 'true');
+            } else {
+              console.log(`Bu bildirim bugün bu saat için zaten gönderilmiş: ${notificationKey}`);
             }
+          }
         });
+      } catch (error) {
+        console.error("İlaç hatırlatma servisi hatası:", error);
+      }
     };
 
-  }, [handleLogout]);
+    // Servisi başlat
+    const intervalId = setInterval(checkMedicationTimes, 10000);
+
+    // Component kaldırıldığında interval'ı temizle
+    return () => {
+      console.log("Bildirim servisi durduruldu.");
+      clearInterval(intervalId);
+    };
+  }, [user]); // Bu useEffect'in en önemli bağımlılığı 'user' state'idir.
 
   return (
     <div>
