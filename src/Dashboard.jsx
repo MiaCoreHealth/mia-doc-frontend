@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// --- Sağlık Paneli ve Günün Tavsiyesi Bileşenleri (Değişiklik yok) ---
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
@@ -65,7 +64,6 @@ const HealthTip = ({ tip, isLoading }) => {
     );
 };
 
-
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
   const [healthTip, setHealthTip] = useState("");
@@ -113,21 +111,30 @@ function Dashboard({ handleLogout }) {
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
       <div className="row mt-4">
-        <div className="col-md-6 mb-4">
+        <div className="col-md-4 mb-4">
           <div className="card h-100 shadow-sm">
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Rapor Analizi</h5>
-              <p className="card-text text-muted">Tıbbi raporlarınızı ve kan tahlillerinizi Mia'ya yorumlatın.</p>
+              <p className="card-text text-muted">Tıbbi raporlarınızı Mia'ya yorumlatın.</p>
               <Link to="/rapor-analizi" className="btn btn-primary mt-auto">Başla</Link>
             </div>
           </div>
         </div>
-        <div className="col-md-6 mb-4">
+        <div className="col-md-4 mb-4">
           <div className="card h-100 shadow-sm">
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
-              <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın, size hangi branşa gitmeniz gerektiği konusunda yol göstersin.</p>
+              <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın.</p>
               <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla</Link>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4 mb-4">
+          <div className="card h-100 shadow-sm">
+            <div className="card-body text-center d-flex flex-column justify-content-center">
+              <h5 className="card-title">İlaçlarım</h5>
+              <p className="card-text text-muted">İlaçlarınızı kaydedin ve yönetin.</p>
+              <Link to="/ilaclarim" className="btn btn-warning mt-auto">Yönet</Link>
             </div>
           </div>
         </div>

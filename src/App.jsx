@@ -6,7 +6,8 @@ import Dashboard from './Dashboard';
 import Profile from './Profile';
 import LandingPage from './LandingPage';
 import RaporAnalizi from './RaporAnalizi';
-import SemptomAnalizi from './SemptomAnalizi'; // Yeni sayfamızı import ediyoruz
+import SemptomAnalizi from './SemptomAnalizi';
+import Ilaclarim from './Ilaclarim'; // Yeni sayfamızı import ediyoruz
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -31,7 +32,7 @@ function App() {
   };
 
   if (isLoading) {
-    return <div>Yükleniyor...</div>;
+    return <div className="d-flex justify-content-center align-items-center" style={{height: "100vh"}}><div className="spinner-border" role="status"><span className="visually-hidden">Yükleniyor...</span></div></div>;
   }
 
   return (
@@ -44,8 +45,9 @@ function App() {
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/" />} />
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
           <Route path="/rapor-analizi" element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
-          {/* YENİ ROTA EKLENDİ */}
           <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
+          {/* YENİ ROTA */}
+          <Route path="/ilaclarim" element={isAuthenticated ? <Ilaclarim handleLogout={handleLogout} /> : <Navigate to="/" />} />
         </Routes>
       </div>
     </Router>
