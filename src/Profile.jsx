@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+// YENİ: Markdown metnini HTML'e çevirmek için kütüphane
+import { marked } from 'marked';
 
-// --- YENİ: Gelişmiş İlaç Yönetimi Bileşeni ---
 function IlacYonetimi() {
   const [meds, setMeds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -11,9 +12,13 @@ function IlacYonetimi() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentMed, setCurrentMed] = useState({ id: null, name: '', dosage: '', quantity: '', times: '', notes: '' });
-  
-  // Saati yönetmek için ek state
   const [timeInputs, setTimeInputs] = useState(['']);
+
+  // YENİ: İlaç bilgisi için state'ler
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoContent, setInfoContent] = useState('');
+  const [isInfoLoading, setIsInfoLoading] = useState(false);
+  const [selectedMedName, setSelectedMedName] = useState('');
 
   const fetchMeds = async () => {
     setIsLoading(true);
@@ -38,16 +43,13 @@ function IlacYonetimi() {
     setCurrentMed(prevState => ({ ...prevState, [name]: value }));
   };
   
-  // Saat kutucukları değiştikçe state'i günceller
   const handleTimeChange = (index, value) => {
     const newTimes = [...timeInputs];
     newTimes[index] = value;
     setTimeInputs(newTimes);
-    // State'i birleştirip asıl 'times' alanına kaydeder
     setCurrentMed(prevState => ({ ...prevState, times: newTimes.join(',') }));
   };
 
-  // "Günde kaç kez" seçimi değiştikçe saat kutucuklarını ayarlar
   const handleFrequencyChange = (count) => {
     setTimeInputs(Array(parseInt(count)).fill(''));
   };
@@ -55,7 +57,7 @@ function IlacYonetimi() {
   const openAddModal = () => {
     setIsEditing(false);
     setCurrentMed({ id: null, name: '', dosage: '', quantity: '', times: '08:00', notes: '' });
-    setTimeInputs(['08:00']); // Varsayılan olarak 1 tane saat kutusu
+    setTimeInputs(['08:00']);
     setShowModal(true);
   };
 
@@ -63,7 +65,7 @@ function IlacYonetimi() {
     setIsEditing(true);
     setCurrentMed(med);
     const timesArray = med.times.split(',');
-    setTimeInputs(timesArray); // Mevcut saatleri kutucuklara doldur
+    setTimeInputs(timesArray);
     setShowModal(true);
   };
 
@@ -75,7 +77,7 @@ function IlacYonetimi() {
         name: currentMed.name,
         dosage: currentMed.dosage,
         quantity: currentMed.quantity,
-        times: timeInputs.join(','), // Saatleri birleştir
+        times: timeInputs.join(','),
         notes: currentMed.notes
     };
 
@@ -105,6 +107,28 @@ function IlacYonetimi() {
     }
   };
 
+  // YENİ: İlaç bilgisi getirme fonksiyonu
+  const handleGetInfo = async (medName) => {
+    setSelectedMedName(medName);
+    setShowInfoModal(true);
+    setIsInfoLoading(true);
+    setError('');
+
+    const token = localStorage.getItem('userToken');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    try {
+      const response = await axios.get(`${apiUrl}/medication-info/${medName}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      // Gelen markdown metnini HTML'e çeviriyoruz
+      setInfoContent(marked(response.data.info));
+    } catch (err) {
+      setInfoContent('<p class="text-danger">Bu ilaç hakkında bilgi alınırken bir hata oluştu.</p>');
+    } finally {
+      setIsInfoLoading(false);
+    }
+  };
+
   return (
     <div className="card shadow-sm mt-4">
       <div className="card-header d-flex justify-content-between align-items-center">
@@ -124,8 +148,9 @@ function IlacYonetimi() {
                   <small className="text-muted">{med.dosage} / {med.quantity} - Saat: {med.times.replace(',', ', ')}</small>
                   {med.notes && <small className="d-block text-info">Not: {med.notes}</small>}
                 </div>
-                <div>
-                    <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => openEditModal(med)}>Düzenle</button>
+                <div className="btn-group">
+                    <button className="btn btn-sm btn-outline-info" onClick={() => handleGetInfo(med.name)}>Bilgi</button>
+                    <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditModal(med)}>Düzenle</button>
                     <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteMed(med.id)}>Sil</button>
                 </div>
               </li>
@@ -134,6 +159,7 @@ function IlacYonetimi() {
         )}
       </div>
 
+      {/* Ekle/Düzenle Modalı (Değişiklik yok) */}
       {showModal && (
         <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -152,10 +178,7 @@ function IlacYonetimi() {
                   <div className="mb-3">
                     <label className="form-label">Günde Kaç Kez?</label>
                     <select className="form-select" onChange={(e) => handleFrequencyChange(e.target.value)} defaultValue={timeInputs.length}>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
+                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                     </select>
                   </div>
                   <div className="row">
@@ -177,10 +200,35 @@ function IlacYonetimi() {
           </div>
         </div>
       )}
+
+      {/* YENİ: Bilgi Modalı */}
+      {showInfoModal && (
+        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h5 className="modal-title">{selectedMedName} Hakkında Bilgi</h5>
+                        <button type="button" className="btn-close" onClick={() => setShowInfoModal(false)}></button>
+                    </div>
+                    <div className="modal-body">
+                        {isInfoLoading ? (
+                            <div className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Yükleniyor...</span></div></div>
+                        ) : (
+                            <div dangerouslySetInnerHTML={{ __html: infoContent }} />
+                        )}
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={() => setShowInfoModal(false)}>Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
 
+// ... (Profile ve BildirimAyarlari bileşenleri aynı, değişiklik yok)
 function BildirimAyarlari() {
     const [permission, setPermission] = useState(Notification.permission);
     const requestPermission = () => {
@@ -288,7 +336,6 @@ function Profile() {
               <div className="col-md-6"><label htmlFor="smoking_status" className="form-label">Sigara Kullanımı</label><select className="form-select" id="smoking_status" name="smoking_status" value={profileData.smoking_status} onChange={handleChange}><option value="">Seçiniz...</option><option value="Kullanmıyor">Kullanmıyor</option><option value="Bıraktı">Bıraktı</option><option value="Kullanıyor">Kullanıyor</option></select></div>
               <div className="col-md-6"><label htmlFor="alcohol_status" className="form-label">Alkol Kullanımı</label><select className="form-select" id="alcohol_status" name="alcohol_status" value={profileData.alcohol_status} onChange={handleChange}><option value="">Seçiniz...</option><option value="Kullanmıyor">Kullanmıyor</option><option value="Sosyal">Sosyal</option><option value="Düzenli">Düzenli</option></select></div>
               
-              {/* DEĞİŞİKLİK: Hamilelik durumu sadece "Kadın" seçildiğinde gösterilir */}
               {profileData.gender === 'Kadın' && (
                 <div className="col-md-12"><label htmlFor="pregnancy_status" className="form-label">Hamilelik Durumu</label><select className="form-select" id="pregnancy_status" name="pregnancy_status" value={profileData.pregnancy_status} onChange={handleChange}><option value="">Seçiniz...</option><option value="Yok">Yok</option><option value="Hamile">Hamile</option><option value="Emziriyor">Emziriyor</option></select></div>
               )}
