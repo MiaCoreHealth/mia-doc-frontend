@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// --- İlaç Yönetimi Bileşeni (Değişiklik yok) ---
+// --- YENİ: Gelişmiş İlaç Yönetimi Bileşeni ---
 function IlacYonetimi() {
   const [meds, setMeds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [newMed, setNewMed] = useState({ name: '', dosage: '', times: '', notes: '' });
+  
+  // Modal ve form yönetimi için state'ler
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentMed, setCurrentMed] = useState({ id: null, name: '', dosage: '', quantity: '', times: '', notes: '' });
 
   const fetchMeds = async () => {
     setIsLoading(true);
@@ -30,20 +33,45 @@ function IlacYonetimi() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewMed(prevState => ({ ...prevState, [name]: value }));
+    setCurrentMed(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleAddMed = async (e) => {
+  const openAddModal = () => {
+    setIsEditing(false);
+    setCurrentMed({ id: null, name: '', dosage: '', quantity: '', times: '', notes: '' });
+    setShowModal(true);
+  };
+
+  const openEditModal = (med) => {
+    setIsEditing(true);
+    setCurrentMed(med);
+    setShowModal(true);
+  };
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
+    const medData = {
+        name: currentMed.name,
+        dosage: currentMed.dosage,
+        quantity: currentMed.quantity,
+        times: currentMed.times,
+        notes: currentMed.notes
+    };
+
     try {
-      await axios.post(`${apiUrl}/medications/`, newMed, { headers: { 'Authorization': `Bearer ${token}` } });
-      setNewMed({ name: '', dosage: '', times: '', notes: '' });
-      setShowForm(false);
+      if (isEditing) {
+        // Düzenleme (PUT)
+        await axios.put(`${apiUrl}/medications/${currentMed.id}`, medData, { headers: { 'Authorization': `Bearer ${token}` } });
+      } else {
+        // Ekleme (POST)
+        await axios.post(`${apiUrl}/medications/`, medData, { headers: { 'Authorization': `Bearer ${token}` } });
+      }
+      setShowModal(false);
       fetchMeds();
     } catch (err) {
-      setError('İlaç eklenirken bir hata oluştu.');
+      setError('İşlem sırasında bir hata oluştu.');
     }
   };
   
@@ -64,43 +92,64 @@ function IlacYonetimi() {
     <div className="card shadow-sm mt-4">
       <div className="card-header d-flex justify-content-between align-items-center">
         <h5>İlaç Yönetimi</h5>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Formu Kapat' : '+ Yeni İlaç Ekle'}
+        <button className="btn btn-primary btn-sm" onClick={openAddModal}>
+          + Yeni İlaç Ekle
         </button>
       </div>
       <div className="card-body">
         {error && <div className="alert alert-danger">{error}</div>}
-        {showForm && (
-          <form onSubmit={handleAddMed} className="mb-4 p-3 border rounded bg-light">
-            <div className="row g-3">
-              <div className="col-md-6"><label className="form-label">İlaç Adı</label><input type="text" name="name" value={newMed.name} onChange={handleInputChange} className="form-control" placeholder="Örn: Parol" required /></div>
-              <div className="col-md-6"><label className="form-label">Dozaj</label><input type="text" name="dosage" value={newMed.dosage} onChange={handleInputChange} className="form-control" placeholder="Örn: 500 mg" required /></div>
-              <div className="col-12"><label className="form-label">Kullanım Saatleri</label><input type="text" name="times" value={newMed.times} onChange={handleInputChange} className="form-control" placeholder="Örn: 08:00, 20:00 (virgülle ayırın)" required /></div>
-              <div className="col-12"><label className="form-label">Notlar</label><input type="text" name="notes" value={newMed.notes} onChange={handleInputChange} className="form-control" placeholder="Örn: Tok karnına alınacak" /></div>
-              <div className="col-12 text-end"><button type="submit" className="btn btn-success">Kaydet</button></div>
-            </div>
-          </form>
-        )}
         {isLoading ? <p>Yükleniyor...</p> : meds.length === 0 ? <p className="text-muted">Kayıtlı ilacınız yok.</p> : (
           <ul className="list-group">
             {meds.map(med => (
               <li key={med.id} className="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                   <h6 className="my-0">{med.name}</h6>
-                  <small className="text-muted">{med.dosage} - Saat: {med.times}</small>
+                  <small className="text-muted">{med.dosage} / {med.quantity} - Saat: {med.times}</small>
                   {med.notes && <small className="d-block text-info">Not: {med.notes}</small>}
                 </div>
-                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteMed(med.id)}>Sil</button>
+                <div>
+                    <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => openEditModal(med)}>Düzenle</button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteMed(med.id)}>Sil</button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {/* Ekle/Düzenle Modalı */}
+      {showModal && (
+        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form onSubmit={handleFormSubmit}>
+                <div className="modal-header">
+                  <h5 className="modal-title">{isEditing ? 'İlacı Düzenle' : 'Yeni İlaç Ekle'}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3"><label className="form-label">İlaç Adı</label><input type="text" name="name" value={currentMed.name} onChange={handleInputChange} className="form-control" required /></div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3"><label className="form-label">Dozaj (mg/ml)</label><input type="text" name="dosage" value={currentMed.dosage} onChange={handleInputChange} className="form-control" placeholder="Örn: 500 mg" required /></div>
+                    <div className="col-md-6 mb-3"><label className="form-label">Miktar</label><input type="text" name="quantity" value={currentMed.quantity} onChange={handleInputChange} className="form-control" placeholder="Örn: 1 tablet" required /></div>
+                  </div>
+                  <div className="mb-3"><label className="form-label">Kullanım Saatleri</label><input type="text" name="times" value={currentMed.times} onChange={handleInputChange} className="form-control" placeholder="Örn: 08:00, 20:00" required /></div>
+                  <div className="mb-3"><label className="form-label">Notlar</label><input type="text" name="notes" value={currentMed.notes} onChange={handleInputChange} className="form-control" /></div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>İptal</button>
+                  <button type="submit" className="btn btn-success">Kaydet</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- YENİ: Bildirim Ayarları Bileşeni ---
+// ... (Profile ve BildirimAyarlari bileşenleri aynı, değişiklik yok)
 function BildirimAyarlari() {
     const [permission, setPermission] = useState(Notification.permission);
 
@@ -144,7 +193,6 @@ function BildirimAyarlari() {
         </div>
     );
 }
-
 
 function Profile() {
   const [profileData, setProfileData] = useState({
@@ -242,10 +290,8 @@ function Profile() {
             </form>
           </div>
         </div>
-
-        <IlacYonetimi />
         
-        {/* YENİ: Bildirim Ayarları Bileşeni */}
+        <IlacYonetimi />
         <BildirimAyarlari />
     </div>
   );
