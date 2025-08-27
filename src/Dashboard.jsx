@@ -66,7 +66,6 @@ const HealthTip = ({ tip, isLoading }) => {
 };
 
 
-// --- YENİ ANA MENÜ ---
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
   const [healthTip, setHealthTip] = useState("");
@@ -128,7 +127,7 @@ function Dashboard({ handleLogout }) {
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
               <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın, size hangi branşa gitmeniz gerektiği konusunda yol göstersin.</p>
-              <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla (Yakında)</Link>
+              <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla</Link>
             </div>
           </div>
         </div>

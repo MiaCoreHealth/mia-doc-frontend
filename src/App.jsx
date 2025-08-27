@@ -5,7 +5,8 @@ import Register from './Register';
 import Dashboard from './Dashboard';
 import Profile from './Profile';
 import LandingPage from './LandingPage';
-import RaporAnalizi from './RaporAnalizi'; // Yeni sayfamızı import ediyoruz
+import RaporAnalizi from './RaporAnalizi';
+import SemptomAnalizi from './SemptomAnalizi'; // Yeni sayfamızı import ediyoruz
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,40 +31,21 @@ function App() {
   };
 
   if (isLoading) {
-    return <div>Yükleniyor...</div>; // veya bir spinner component
+    return <div>Yükleniyor...</div>;
   }
 
   return (
     <Router>
       <div className="container my-5">
         <Routes>
-          <Route 
-            path="/" 
-            element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" />} 
-          />
-          <Route 
-            path="/login" 
-            element={!isAuthenticated ? <Login handleLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
-          />
-          <Route 
-            path="/register" 
-            element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} 
-          />
-          <Route 
-            path="/dashboard" 
-            element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/" />} 
-          />
-          <Route 
-            path="/profile" 
-            element={isAuthenticated ? <Profile /> : <Navigate to="/" />} 
-          />
-          {/* YENİ ROTA */}
-          <Route 
-            path="/rapor-analizi" 
-            element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} 
-          />
-          {/* Semptom analizi için gelecekteki rota */}
-          {/* <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} /> */}
+          <Route path="/" element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!isAuthenticated ? <Login handleLogin={handleLogin} /> : <Navigate to="/dashboard" />} />
+          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/" />} />
+          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
+          <Route path="/rapor-analizi" element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
+          {/* YENİ ROTA EKLENDİ */}
+          <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
         </Routes>
       </div>
     </Router>
