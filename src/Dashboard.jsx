@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// HealthPanel ve HealthTip bileşenleri aynı, değişiklik yok
-
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
@@ -113,7 +111,6 @@ function Dashboard({ handleLogout }) {
       <HealthPanel user={user} />
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      {/* DEĞİŞİKLİK: Kartlar ortalandı ve İlaçlar kartı kaldırıldı */}
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">

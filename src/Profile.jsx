@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-// YENİ: İlaç yönetimini ayrı bir bileşen yapıyoruz
 function IlacYonetimi() {
   const [meds, setMeds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,7 +147,6 @@ function Profile() {
       for (const key in dataToSend) {
         if (dataToSend[key] === '') { dataToSend[key] = null; }
       }
-      // Not: 'medications' alanı artık buradan yönetilmiyor.
       delete dataToSend.medications; 
       
       await axios.post(`${apiUrl}/profile/me/`, dataToSend, {
@@ -181,7 +179,6 @@ function Profile() {
             <p className="card-text text-muted">Bu bilgiler, Mia'nın size daha doğru ve kişisel yorumlar yapmasına yardımcı olur.</p>
             
             <form onSubmit={handleSave} className="row g-3">
-              {/* Form alanları burada (değişiklik yok) */}
               <div className="col-md-6"><label htmlFor="date_of_birth" className="form-label">Doğum Tarihi</label><input type="date" className="form-control" id="date_of_birth" name="date_of_birth" value={profileData.date_of_birth} onChange={handleChange} /></div>
               <div className="col-md-6"><label htmlFor="gender" className="form-label">Cinsiyet</label><select className="form-select" id="gender" name="gender" value={profileData.gender} onChange={handleChange}><option value="">Seçiniz...</option><option value="Erkek">Erkek</option><option value="Kadın">Kadın</option></select></div>
               <div className="col-md-6"><label htmlFor="height_cm" className="form-label">Boy (cm)</label><input type="number" className="form-control" id="height_cm" name="height_cm" value={profileData.height_cm} onChange={handleChange} placeholder="Örn: 175"/></div>
@@ -200,7 +197,6 @@ function Profile() {
           </div>
         </div>
 
-        {/* YENİ: İlaç Yönetimi Bileşeni */}
         <IlacYonetimi />
     </div>
   );
