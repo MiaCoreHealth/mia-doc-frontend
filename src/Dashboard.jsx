@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import History from './History.jsx';
 
-// --- Sağlık Paneli Bileşeni (Değişiklik yok) ---
+// --- Sağlık Paneli ve Günün Tavsiyesi Bileşenleri (Değişiklik yok) ---
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
@@ -51,7 +50,6 @@ const HealthPanel = ({ user }) => {
   );
 };
 
-// --- Günün Tavsiyesi Bileşeni (Değişiklik yok) ---
 const HealthTip = ({ tip, isLoading }) => {
     return (
         <div className="card shadow-sm mb-4 bg-light border-primary">
@@ -67,21 +65,12 @@ const HealthTip = ({ tip, isLoading }) => {
     );
 };
 
+
+// --- YENİ ANA MENÜ ---
 function Dashboard({ handleLogout }) {
   const [user, setUser] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [historyKey, setHistoryKey] = useState(0);
-  const [forSomeoneElse, setForSomeoneElse] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState("");
   const [healthTip, setHealthTip] = useState("");
   const [isTipLoading, setIsTipLoading] = useState(true);
-
-  const getUsernameFromEmail = (email) => {
-    if (!email) return '';
-    const namePart = email.split('@')[0];
-    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
-  };
 
   useEffect(() => {
     const token = localStorage.getItem('userToken');
@@ -97,83 +86,23 @@ function Dashboard({ handleLogout }) {
         const tipPromise = axios.get(`${apiUrl}/health-tip/`, { headers: { 'Authorization': `Bearer ${token}` } });
         const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
         
-        const fetchedUser = profileResponse.data;
-        setUser(fetchedUser);
-        
-        setMessages([
-          {
-            sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}! Ben kişisel sağlık asistanın Mia. Sana nasıl yardımcı olabilirim? Analiz etmemi istediğin bir raporu yükleyebilir veya aklına takılan bir sağlık sorusunu sorabilirsin.`
-          }
-        ]);
-
+        setUser(profileResponse.data);
         setHealthTip(tipResponse.data.tip);
         setIsTipLoading(false);
 
       } catch (error) {
         console.error("Başlangıç verileri alınamadı:", error);
-        setHealthTip("Sağlıklı bir gün geçirmen dileğiyle!");
-        setIsTipLoading(false);
-        if (!user) {
-            handleLogout();
-        }
+        handleLogout();
       }
     };
     fetchInitialData();
   }, [handleLogout]);
 
-  const sendMessageToApi = async ({ file, question }) => {
-    if (!file && (!question || !question.trim())) return;
-    setIsLoading(true);
-    const token = localStorage.getItem('userToken');
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (file) {
-      setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${file.name}` }]);
-    }
-    if (question) {
-      setMessages(prev => [...prev, { sender: 'user', text: question }]);
-      setCurrentQuestion("");
-    }
-    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
-    const formData = new FormData();
-    const historyToSend = messages.filter(m => m.text.startsWith('Merhaba') === false);
-    if (file) formData.append('file', file);
-    if (question) formData.append('question', question);
-    formData.append('history_json', JSON.stringify(historyToSend));
-    formData.append('for_someone_else', forSomeoneElse);
-    try {
-      const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
-      if (file && !forSomeoneElse) {
-        setHistoryKey(prevKey => prevKey + 1);
-      }
-    } catch (error) {
-      const errorText = error.response ? error.response.data.detail : 'Analiz sırasında bir ağ hatası oluştu.';
-      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
-    } finally {
-      setIsLoading(false);
-      if (file && document.getElementById('fileInput')) {
-        document.getElementById('fileInput').value = '';
-      }
-    }
-  };
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) { sendMessageToApi({ file: file }); }
-  };
-  const handleSendQuestion = (event) => {
-    event.preventDefault();
-    if (!currentQuestion.trim()) return;
-    sendMessageToApi({ question: currentQuestion });
-  };
-
   return (
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          <span className="navbar-brand">Miacore Health & Asistanın Mia</span>
+          <span className="navbar-brand">Miacore Health Ana Sayfa</span>
           <div>
             <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
             <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
@@ -183,44 +112,27 @@ function Dashboard({ handleLogout }) {
       
       <HealthPanel user={user} />
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
-      
-      <div className="chat-window card shadow-sm mb-3">
-        <div className="card-body">
-          {messages.map((msg, index) => (
-            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
-              <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
+
+      <div className="row mt-4">
+        <div className="col-md-6 mb-4">
+          <div className="card h-100 shadow-sm">
+            <div className="card-body text-center d-flex flex-column justify-content-center">
+              <h5 className="card-title">Rapor Analizi</h5>
+              <p className="card-text text-muted">Tıbbi raporlarınızı ve kan tahlillerinizi Mia'ya yorumlatın.</p>
+              <Link to="/rapor-analizi" className="btn btn-primary mt-auto">Başla</Link>
             </div>
-          ))}
-          {isLoading && messages[messages.length - 1]?.text === '...' && (
-             <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
-               <div className="message-bubble mia-doc">
-                 {/* DEĞİŞİKLİK: Metin güncellendi */}
-                 <span className="spinner-border spinner-border-sm"></span> Mia düşünüyor...
-               </div>
-             </div>
-          )}
+          </div>
+        </div>
+        <div className="col-md-6 mb-4">
+          <div className="card h-100 shadow-sm">
+            <div className="card-body text-center d-flex flex-column justify-content-center">
+              <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
+              <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın, size hangi branşa gitmeniz gerektiği konusunda yol göstersin.</p>
+              <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla (Yakında)</Link>
+            </div>
+          </div>
         </div>
       </div>
-
-      <form onSubmit={handleSendQuestion} className="input-group mb-3">
-        <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
-        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
-        <input type="text" className="form-control" placeholder="Mia'ya bir soru sor..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading} />
-        <button className="btn btn-primary" type="submit" disabled={isLoading || !currentQuestion.trim()}>
-          {isLoading ? '...' : 'Gönder'}
-        </button>
-      </form>
-
-      <div className="form-check mb-3">
-        <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
-        <label className="form-check-label" htmlFor="forSomeoneElseCheck">
-          Bu rapor başkasına ait (geçmişe kaydedilmeyecek)
-        </label>
-      </div>
-
-      <History key={historyKey} />
     </div>
   );
 }

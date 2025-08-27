@@ -1,56 +1,70 @@
-// frontend/src/App.jsx
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-// Bileşenleri import ediyoruz
-import Dashboard from './Dashboard.jsx';
-import VerifyEmail from './VerifyEmail.jsx';
-import Profile from './Profile.jsx';
-import LandingPage from './LandingPage.jsx'; // Yeni karşılama sayfamız
-import Login from './Login.jsx';
-import Register from './Register.jsx';
-
-import './App.css';
+import Login from './Login';
+import Register from './Register';
+import Dashboard from './Dashboard';
+import Profile from './Profile';
+import LandingPage from './LandingPage';
+import RaporAnalizi from './RaporAnalizi'; // Yeni sayfamızı import ediyoruz
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('userToken'));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem('userToken');
     if (token) {
-      localStorage.setItem('userToken', token);
-    } else {
-      localStorage.removeItem('userToken');
+      setIsAuthenticated(true);
     }
-  }, [token]);
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = (token) => {
+    localStorage.setItem('userToken', token);
+    setIsAuthenticated(true);
+  };
 
   const handleLogout = () => {
-    setToken(null);
+    localStorage.removeItem('userToken');
+    setIsAuthenticated(false);
   };
+
+  if (isLoading) {
+    return <div>Yükleniyor...</div>; // veya bir spinner component
+  }
 
   return (
     <Router>
-      <div className="container py-4">
-        <header className="text-center mb-4">
-          {/* Başlığımız artık burada */}
-          <h1>MiaCore Health Sağlık Asistanı</h1>
-        </header>
-        <main>
-          <Routes>
-            {/* Ana Sayfa Yönlendirmesi */}
-            <Route path="/" element={!token ? <LandingPage /> : <Dashboard handleLogout={handleLogout} />} />
-
-            {/* Giriş ve Kayıt Sayfaları */}
-            <Route path="/login" element={!token ? <div className="d-flex justify-content-center"><Login onLoginSuccess={setToken} /></div> : <Navigate to="/" />} />
-            <Route path="/register" element={!token ? <div className="d-flex justify-content-center"><Register /></div> : <Navigate to="/" />} />
-
-            {/* Korumalı Sayfalar */}
-            <Route path="/profile" element={token ? <Profile /> : <Navigate to="/login" />} />
-
-            {/* Diğer Sayfalar */}
-            <Route path="/verify-email" element={<VerifyEmail />} />
-          </Routes>
-        </main>
+      <div className="container my-5">
+        <Routes>
+          <Route 
+            path="/" 
+            element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" />} 
+          />
+          <Route 
+            path="/login" 
+            element={!isAuthenticated ? <Login handleLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
+          />
+          <Route 
+            path="/register" 
+            element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} 
+          />
+          <Route 
+            path="/dashboard" 
+            element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/profile" 
+            element={isAuthenticated ? <Profile /> : <Navigate to="/" />} 
+          />
+          {/* YENİ ROTA */}
+          <Route 
+            path="/rapor-analizi" 
+            element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} 
+          />
+          {/* Semptom analizi için gelecekteki rota */}
+          {/* <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} /> */}
+        </Routes>
       </div>
     </Router>
   );
