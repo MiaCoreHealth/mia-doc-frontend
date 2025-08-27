@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+// --- İlaç Yönetimi Bileşeni (Değişiklik yok) ---
 function IlacYonetimi() {
   const [meds, setMeds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +98,51 @@ function IlacYonetimi() {
       </div>
     </div>
   );
+}
+
+// --- YENİ: Bildirim Ayarları Bileşeni ---
+function BildirimAyarlari() {
+    const [permission, setPermission] = useState(Notification.permission);
+
+    const requestPermission = () => {
+        Notification.requestPermission().then((result) => {
+            setPermission(result);
+        });
+    };
+
+    const getStatusText = () => {
+        if (permission === 'granted') {
+            return { text: 'İzin Verildi', class: 'text-success' };
+        }
+        if (permission === 'denied') {
+            return { text: 'Engellendi (Tarayıcı ayarlarından değiştirmeniz gerekir)', class: 'text-danger' };
+        }
+        return { text: 'İzin Bekleniyor', class: 'text-warning' };
+    };
+
+    const { text, class: statusClass } = getStatusText();
+
+    return (
+        <div className="card shadow-sm mt-4">
+            <div className="card-header">
+                <h5>Bildirim Ayarları</h5>
+            </div>
+            <div className="card-body">
+                <p>İlaç hatırlatmalarını alabilmek için tarayıcı bildirimlerine izin vermeniz gerekmektedir.</p>
+                <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Durum: </strong>
+                        <span className={`fw-bold ${statusClass}`}>{text}</span>
+                    </div>
+                    {permission === 'default' && (
+                        <button className="btn btn-info" onClick={requestPermission}>
+                            Bildirimlere İzin Ver
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 
@@ -198,6 +244,9 @@ function Profile() {
         </div>
 
         <IlacYonetimi />
+        
+        {/* YENİ: Bildirim Ayarları Bileşeni */}
+        <BildirimAyarlari />
     </div>
   );
 }
