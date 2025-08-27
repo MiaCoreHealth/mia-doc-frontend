@@ -100,7 +100,6 @@ function Dashboard({ handleLogout }) {
         const fetchedUser = profileResponse.data;
         setUser(fetchedUser);
         
-        // --- YENİ KARŞILAMA MESAJI ---
         setMessages([
           {
             sender: 'mia-doc',
@@ -123,7 +122,6 @@ function Dashboard({ handleLogout }) {
     fetchInitialData();
   }, [handleLogout]);
 
-  // Diğer fonksiyonlar (sendMessageToApi vb.) aynı, değişiklik yok
   const sendMessageToApi = async ({ file, question }) => {
     if (!file && (!question || !question.trim())) return;
     setIsLoading(true);
@@ -175,7 +173,6 @@ function Dashboard({ handleLogout }) {
     <div>
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          {/* Navbar başlığını da güncelleyelim */}
           <span className="navbar-brand">Miacore Health & Asistanın Mia</span>
           <div>
             <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
@@ -199,7 +196,8 @@ function Dashboard({ handleLogout }) {
              <div className="d-flex align-items-end mb-3 justify-content-start">
                <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
                <div className="message-bubble mia-doc">
-                 <span className="spinner-border spinner-border-sm"></span> Düşünüyorum...
+                 {/* DEĞİŞİKLİK: Metin güncellendi */}
+                 <span className="spinner-border spinner-border-sm"></span> Mia düşünüyor...
                </div>
              </div>
           )}

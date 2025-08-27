@@ -8,9 +8,9 @@ function LandingPage() {
         <img 
           src="https://i.imgur.com/OnfAvOo.png" 
           alt="Mia - Kişisel Sağlık Asistanı" 
-          className="landing-avatar mb-4" 
+          // DEĞİŞİKLİK: Avatarı ortalamak için "mx-auto d-block" eklendi
+          className="landing-avatar mb-4 mx-auto d-block" 
         />
-        {/* YENİ KARŞILAMA METNİ */}
         <h1 className="card-title h2">Merhaba, ben Mia!</h1>
         <p className="card-text lead text-muted">
           Kişisel sağlık asistanın olarak, tıbbi raporlarını anlamana ve sağlık verilerini takip etmene yardımcı olmak için buradayım.
