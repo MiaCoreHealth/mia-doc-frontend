@@ -71,21 +71,16 @@ function Dashboard({ handleLogout }) {
   const [healthTip, setHealthTip] = useState("");
   const [isTipLoading, setIsTipLoading] = useState(true);
 
-  // --- YENİ: İLAÇ HATIRLATMA MANTIĞI ---
+  // --- GÜNCELLENMİŞ İLAÇ HATIRLATMA MANTIĞI ---
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) return;
 
-    let lastNotified = {}; // Hangi ilaç için hangi saatte bildirim gönderildiğini takip eder
-
-    // Her dakika çalışacak olan zamanlayıcı
-    const intervalId = setInterval(async () => {
-      // Sadece bildirimlere izin verildiyse devam et
+    const checkMedicationTimes = async () => {
       if (Notification.permission !== 'granted') return;
 
       const apiUrl = import.meta.env.VITE_API_URL;
       try {
-        // Kullanıcının ilaçlarını çek
         const response = await axios.get(`${apiUrl}/medications/`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -93,20 +88,23 @@ function Dashboard({ handleLogout }) {
         
         const now = new Date();
         const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD formatında tarih
 
         meds.forEach(med => {
-          // İlaç saatlerini ayır (örn: "08:00, 20:00" -> ["08:00", "20:00"])
           const times = med.times.split(',').map(t => t.trim());
           
           if (times.includes(currentTime)) {
-            const notificationKey = `${med.id}-${currentTime}`;
-            // Eğer bu ilaç için bu saatte daha önce bildirim gönderilmediyse, gönder
-            if (!lastNotified[notificationKey]) {
+            const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
+            
+            // Eğer bu ilaç için bu saatte bugün bildirim gönderilmediyse, gönder
+            if (!sessionStorage.getItem(notificationKey)) {
               new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
-                body: `${med.name} (${med.dosage}) ilacınızı alma zamanı geldi.`,
-                icon: 'https://i.imgur.com/OnfAvOo.png' // Mia'nın avatarı
+                body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
+                icon: 'https://i.imgur.com/OnfAvOo.png',
+                tag: notificationKey // Aynı bildirimin tekrar çıkmasını engeller
               });
-              lastNotified[notificationKey] = true; // Bildirim gönderildi olarak işaretle
+              // Bildirim gönderildi olarak işaretle
+              sessionStorage.setItem(notificationKey, 'true');
             }
           }
         });
@@ -114,9 +112,12 @@ function Dashboard({ handleLogout }) {
       } catch (error) {
         console.error("İlaç hatırlatma servisi hatası:", error);
       }
-    }, 60000); // 60000 milisaniye = 1 dakika
+    };
 
-    // Component kaldırıldığında zamanlayıcıyı temizle
+    // Sayfa yüklendiğinde hemen bir kontrol yap, sonra zamanlayıcıyı başlat
+    checkMedicationTimes();
+    const intervalId = setInterval(checkMedicationTimes, 10000); // Her 10 saniyede bir kontrol et
+
     return () => clearInterval(intervalId);
   }, []);
 
