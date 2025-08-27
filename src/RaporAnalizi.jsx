@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import History from './History.jsx';
@@ -10,6 +10,19 @@ function RaporAnalizi({ handleLogout }) {
   const [historyKey, setHistoryKey] = useState(0);
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
+
+  // Otomatik kaydırma için bir referans oluşturuyoruz
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Mesajlar her değiştiğinde en alta kaydır
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
 
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
@@ -103,10 +116,10 @@ function RaporAnalizi({ handleLogout }) {
       </nav>
       
       <div className="chat-window card shadow-sm mb-3">
-        <div className="card-body">
+        {/* --- DEĞİŞİKLİK BURADA --- */}
+        <div className="card-body" style={{ height: '50vh', overflowY: 'auto' }}>
           {messages.map((msg, index) => (
             <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {/* --- DEĞİŞİKLİK BURADA --- */}
               {msg.sender === 'mia-doc' && 
                 <img 
                   src="https://i.imgur.com/OnfAvOo.png" 
@@ -129,6 +142,8 @@ function RaporAnalizi({ handleLogout }) {
                </div>
              </div>
           )}
+          {/* Otomatik kaydırma için boş div */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
