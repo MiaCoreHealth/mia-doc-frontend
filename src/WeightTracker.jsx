@@ -10,7 +10,6 @@ const WeightTracker = () => {
   const [currentWeight, setCurrentWeight] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  // YENİ: Grafik ve geçmiş listesinin görünürlüğünü kontrol eden state
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
 
   const fetchWeightHistory = async () => {
@@ -52,7 +51,6 @@ const WeightTracker = () => {
     }
   };
 
-  // YENİ: Kilo kaydını silme fonksiyonu
   const handleDeleteWeight = async (entryId) => {
     if (window.confirm("Bu kilo kaydını silmek istediğinizden emin misiniz?")) {
         const token = localStorage.getItem('userToken');
@@ -78,22 +76,20 @@ const WeightTracker = () => {
   const chartOptions = { responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Kilo Değişim Grafiği' } } };
 
   return (
-    <div className="card shadow-sm mt-4">
-      <div className="card-header">
-        <h5>Kilo Takibi</h5>
-      </div>
-      <div className="card-body">
+    <div className="mt-4">
+        <h5 className="card-title text-center mb-3">Kilo Takibi</h5>
         <div className="row align-items-center">
             <div className="col-md-6 text-center mb-3 mb-md-0">
                 <h6 className="text-muted">Güncel Kilonuz</h6>
                 {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 
-                    <span className="display-4 fw-bold">{latestWeight ? `${latestWeight} kg` : 'N/A'}</span>
+                    <span className="display-5 fw-bold">{latestWeight ? `${latestWeight} kg` : 'N/A'}</span>
                 }
             </div>
             <div className="col-md-6">
-                <form onSubmit={handleAddWeight} className="mt-3">
+                <form onSubmit={handleAddWeight}>
+                    <label className="form-label small text-muted">Bugünkü kilonuzu ekleyin</label>
                     <div className="input-group">
-                        <input type="number" step="0.1" className="form-control" placeholder="Bugünkü kilonuzu girin (örn: 75.5)" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)} />
+                        <input type="number" step="0.1" className="form-control" placeholder="Örn: 75.5" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)} />
                         <button className="btn btn-success" type="submit">Ekle</button>
                     </div>
                     {error && <small className="text-danger mt-1 d-block">{error}</small>}
@@ -104,7 +100,7 @@ const WeightTracker = () => {
         {weightHistory.length > 0 && (
             <div className="text-center mt-3">
                 <button className="btn btn-outline-secondary btn-sm" onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
-                    {isDetailsVisible ? 'Detayları Gizle' : 'Detayları Göster'}
+                    {isDetailsVisible ? 'Detayları Gizle' : 'Geçmişi ve Grafiği Göster'}
                 </button>
             </div>
         )}
@@ -129,7 +125,6 @@ const WeightTracker = () => {
             </div>
         )}
       </div>
-    </div>
   );
 };
 

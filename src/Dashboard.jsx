@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import BMIGauge from './BMIGauge';
-import WeightTracker from './WeightTracker';
+import WeightTracker from './WeightTracker'; // Kilo takip bileşenini import ediyoruz
 
 const HealthPanel = ({ user }) => {
   if (!user) {
@@ -52,6 +52,9 @@ const HealthPanel = ({ user }) => {
             </h5>
           </div>
         </div>
+        {/* Kilo Takip Modülü buraya entegre edildi */}
+        <hr className="my-4" />
+        <WeightTracker />
       </div>
     </div>
   );
@@ -110,7 +113,6 @@ function Dashboard({ handleLogout }) {
     if (!user || Notification.permission !== 'granted') {
       return;
     }
-
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
     
@@ -170,7 +172,7 @@ function Dashboard({ handleLogout }) {
       <HealthPanel user={user} />
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      <WeightTracker />
+      {/* Kilo Takip Modülü artık HealthPanel içinde */}
 
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
