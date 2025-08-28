@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import BMIGauge from './BMIGauge'; // Yeni bileşeni import ediyoruz
 
-// --- Bileşenler (Değişiklik yok) ---
 const HealthPanel = ({ user }) => {
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
@@ -19,18 +19,13 @@ const HealthPanel = ({ user }) => {
     return age;
   };
   const calculateBMI = (weight, height) => {
-    if (!weight || !height) return { bmi: null, interpretation: 'Profilinizde boy ve kilo bilgisi eksik.' };
+    if (!weight || !height) return null;
     const heightInMeters = height / 100;
-    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
-    let interpretation = '';
-    if (bmi < 18.5) interpretation = 'Zayıf';
-    else if (bmi >= 18.5 && bmi < 25) interpretation = 'Normal Kilolu';
-    else if (bmi >= 25 && bmi < 30) interpretation = 'Fazla Kilolu';
-    else interpretation = 'Obez';
-    return { bmi, interpretation };
+    const bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
+    return bmi;
   };
   const age = calculateAge(user.date_of_birth);
-  const { bmi, interpretation } = calculateBMI(user.weight_kg, user.height_cm);
+  const bmi = calculateBMI(user.weight_kg, user.height_cm);
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
     const namePart = email.split('@')[0];
@@ -40,10 +35,21 @@ const HealthPanel = ({ user }) => {
     <div className="card shadow-sm mb-4">
       <div className="card-header"><h5>Sağlık Paneli</h5></div>
       <div className="card-body">
-        <div className="row text-center">
-          <div className="col-md-4 border-end"><h6 className="text-muted">Hoş Geldin</h6><h4>{getUsernameFromEmail(user.email)}</h4></div>
-          <div className="col-md-4 border-end"><h6 className="text-muted">Yaş / VKİ</h6><h4>{age ? `${age} Yaş` : 'N/A'} / <span title={interpretation}>{bmi || 'N/A'}</span></h4></div>
-          <div className="col-md-4"><h6 className="text-muted">Bilinen Kronik Hastalıklar</h6><h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>{user.chronic_diseases || 'Belirtilmemiş'}</h5></div>
+        <div className="row text-center align-items-center">
+          <div className="col-md-4 border-end">
+            <h6 className="text-muted">Hoş Geldin</h6>
+            <h4>{getUsernameFromEmail(user.email)}</h4>
+            <h6 className="mt-2">{age ? `${age} Yaşında` : 'Yaş Belirtilmemiş'}</h6>
+          </div>
+          <div className="col-md-4 border-end">
+            <BMIGauge bmi={bmi} />
+          </div>
+          <div className="col-md-4">
+            <h6 className="text-muted">Bilinen Kronik Hastalıklar</h6>
+            <h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>
+              {user.chronic_diseases || 'Belirtilmemiş'}
+            </h5>
+          </div>
         </div>
       </div>
     </div>
@@ -71,7 +77,6 @@ function Dashboard({ handleLogout }) {
   const [healthTip, setHealthTip] = useState("");
   const [isTipLoading, setIsTipLoading] = useState(true);
 
-  // --- ANA VERİLERİ ÇEKMEK İÇİN useEffect ---
   useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) { 
@@ -95,66 +100,59 @@ function Dashboard({ handleLogout }) {
         handleLogout();
       }
     };
+    
     fetchInitialData();
-  }, [handleLogout]);
 
-  // --- BİLDİRİM SERVİSİ İÇİN AYRI useEffect ---
-  // Bu bölüm, sadece 'user' verisi başarıyla yüklendikten sonra çalışır.
+  }, [handleLogout]);
+  
   useEffect(() => {
-    // Eğer kullanıcı bilgisi yoksa veya bildirimlere izin verilmediyse servisi başlatma
     if (!user || Notification.permission !== 'granted') {
-      if(user) console.log("Bildirim servisi başlatılmadı (izin verilmemiş).");
       return;
     }
 
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
-    console.log("Bildirim servisi başlatıldı. Her 10 saniyede bir kontrol edilecek.");
-
+    
     const checkMedicationTimes = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/medications/`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const meds = response.data;
-        const now = new Date();
-        const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-        const currentDate = now.toISOString().split('T')[0];
-
-        console.log(`Kontrol saati: ${currentTime}. Kayıtlı ${meds.length} ilaç kontrol ediliyor...`);
-
-        meds.forEach(med => {
-          const times = med.times.split(',').map(t => t.trim());
-          if (times.includes(currentTime)) {
-            console.log(`Eşleşme bulundu: ${med.name} için saat ${currentTime}`);
-            const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
+        try {
+            const response = await axios.get(`${apiUrl}/medications/`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const meds = response.data;
             
-            if (!sessionStorage.getItem(notificationKey)) {
-              console.log(`Bildirim gönderiliyor: ${notificationKey}`);
-              const notification = new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
-                body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
-                icon: 'https://i.imgur.com/OnfAvOo.png',
-                tag: notificationKey
-              });
-              notification.onclick = () => { window.focus(); };
-              sessionStorage.setItem(notificationKey, 'true');
-            } else {
-              console.log(`Bu bildirim bugün bu saat için zaten gönderilmiş: ${notificationKey}`);
-            }
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const currentDate = now.toISOString().split('T')[0];
+    
+            meds.forEach(med => {
+              const times = med.times.split(',').map(t => t.trim());
+              
+              if (times.includes(currentTime)) {
+                const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
+                
+                if (!sessionStorage.getItem(notificationKey)) {
+                  const notification = new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
+                    body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
+                    icon: 'https://i.imgur.com/OnfAvOo.png',
+                    tag: notificationKey
+                  });
+                  notification.onclick = () => {
+                    window.focus();
+                  };
+                  sessionStorage.setItem(notificationKey, 'true');
+                }
+              }
+            });
+    
+          } catch (error) {
+            console.error("İlaç hatırlatma servisi hatası:", error);
           }
-        });
-      } catch (error) {
-        console.error("İlaç hatırlatma servisi hatası:", error);
-      }
     };
 
-    // Servisi başlat
     const intervalId = setInterval(checkMedicationTimes, 10000);
 
-    // Component kaldırıldığında interval'ı temizle
-    return () => {
-      console.log("Bildirim servisi durduruldu.");
-      clearInterval(intervalId);
-    };
-  }, [user]); // Bu useEffect'in en önemli bağımlılığı 'user' state'idir.
+    return () => clearInterval(intervalId);
+  }, [user]);
 
   return (
     <div>
