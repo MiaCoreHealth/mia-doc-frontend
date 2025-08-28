@@ -10,6 +10,8 @@ const WeightTracker = () => {
   const [currentWeight, setCurrentWeight] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  // YENİ: Grafik ve geçmiş listesinin görünürlüğünü kontrol eden state
+  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
 
   const fetchWeightHistory = async () => {
     const token = localStorage.getItem('userToken');
@@ -32,7 +34,7 @@ const WeightTracker = () => {
 
   const handleAddWeight = async (e) => {
     e.preventDefault();
-    if (!currentWeight || isNaN(currentWeight)) {
+    if (!currentWeight || isNaN(currentWeight) || currentWeight <= 0) {
       setError('Lütfen geçerli bir kilo değeri girin.');
       return;
     }
@@ -44,59 +46,88 @@ const WeightTracker = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setCurrentWeight('');
-      fetchWeightHistory(); // Grafiği güncelle
+      fetchWeightHistory();
     } catch (err) {
       setError('Kilo eklenirken bir hata oluştu.');
     }
   };
 
-  const chartData = {
-    labels: weightHistory.map(entry => new Date(entry.entry_date).toLocaleDateString('tr-TR')),
-    datasets: [
-      {
-        label: 'Kilo (kg)',
-        data: weightHistory.map(entry => entry.weight_kg),
-        fill: true,
-        backgroundColor: 'rgba(75,192,192,0.2)',
-        borderColor: 'rgba(75,192,192,1)',
-        tension: 0.1
-      }
-    ]
-  };
-  
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Kilo Değişim Grafiği'
-      }
+  // YENİ: Kilo kaydını silme fonksiyonu
+  const handleDeleteWeight = async (entryId) => {
+    if (window.confirm("Bu kilo kaydını silmek istediğinizden emin misiniz?")) {
+        const token = localStorage.getItem('userToken');
+        const apiUrl = import.meta.env.VITE_API_URL;
+        try {
+            await axios.delete(`${apiUrl}/weight-entries/${entryId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchWeightHistory(); // Listeyi ve grafiği güncelle
+        } catch (err) {
+            setError('Kayıt silinirken bir hata oluştu.');
+        }
     }
   };
 
+  const latestWeight = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weight_kg : null;
+
+  const chartData = {
+    labels: weightHistory.map(entry => new Date(entry.entry_date).toLocaleDateString('tr-TR')),
+    datasets: [{ label: 'Kilo (kg)', data: weightHistory.map(entry => entry.weight_kg), fill: true, backgroundColor: 'rgba(75,192,192,0.2)', borderColor: 'rgba(75,192,192,1)', tension: 0.1 }]
+  };
+  
+  const chartOptions = { responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Kilo Değişim Grafiği' } } };
+
   return (
     <div className="card shadow-sm mt-4">
+      <div className="card-header">
+        <h5>Kilo Takibi</h5>
+      </div>
       <div className="card-body">
-        {isLoading ? <p>Grafik yükleniyor...</p> : (
-            weightHistory.length > 0 ? <Line options={chartOptions} data={chartData} /> : <p className="text-center text-muted">Grafiği görmek için en az bir kilo verisi eklemelisiniz.</p>
+        <div className="row align-items-center">
+            <div className="col-md-6 text-center mb-3 mb-md-0">
+                <h6 className="text-muted">Güncel Kilonuz</h6>
+                {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 
+                    <span className="display-4 fw-bold">{latestWeight ? `${latestWeight} kg` : 'N/A'}</span>
+                }
+            </div>
+            <div className="col-md-6">
+                <form onSubmit={handleAddWeight} className="mt-3">
+                    <div className="input-group">
+                        <input type="number" step="0.1" className="form-control" placeholder="Bugünkü kilonuzu girin (örn: 75.5)" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)} />
+                        <button className="btn btn-success" type="submit">Ekle</button>
+                    </div>
+                    {error && <small className="text-danger mt-1 d-block">{error}</small>}
+                </form>
+            </div>
+        </div>
+        
+        {weightHistory.length > 0 && (
+            <div className="text-center mt-3">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
+                    {isDetailsVisible ? 'Detayları Gizle' : 'Detayları Göster'}
+                </button>
+            </div>
         )}
-        <form onSubmit={handleAddWeight} className="mt-3">
-          <div className="input-group">
-            <input 
-              type="number" 
-              step="0.1"
-              className="form-control" 
-              placeholder="Bugünkü kilonuzu girin (örn: 75.5)" 
-              value={currentWeight}
-              onChange={(e) => setCurrentWeight(e.target.value)}
-            />
-            <button className="btn btn-success" type="submit">Ekle</button>
-          </div>
-          {error && <small className="text-danger mt-1 d-block">{error}</small>}
-        </form>
+
+        {isDetailsVisible && (
+            <div className="mt-4">
+                <hr />
+                <h6>Kilo Değişim Grafiği</h6>
+                <Line options={chartOptions} data={chartData} />
+                <h6 className="mt-4">Geçmiş Kayıtlar</h6>
+                <ul className="list-group list-group-flush">
+                    {weightHistory.slice().reverse().map(entry => (
+                        <li key={entry.id} className="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>{entry.weight_kg} kg</strong> - 
+                                <span className="text-muted ms-2">{new Date(entry.entry_date).toLocaleString('tr-TR')}</span>
+                            </span>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteWeight(entry.id)}>Sil</button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
       </div>
     </div>
   );
