@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import BMIGauge from './BMIGauge'; // Yeni bileşeni import ediyoruz
+import BMIGauge from './BMIGauge';
+import WeightTracker from './WeightTracker';
 
 const HealthPanel = ({ user }) => {
   if (!user) {
@@ -168,6 +169,8 @@ function Dashboard({ handleLogout }) {
       
       <HealthPanel user={user} />
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
+
+      <WeightTracker />
 
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
