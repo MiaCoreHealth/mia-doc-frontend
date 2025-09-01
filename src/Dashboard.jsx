@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import BMIGauge from './BMIGauge';
-import WeightTracker from './WeightTracker'; // Kilo takip bileşenini import ediyoruz
+import WeightTracker from './WeightTracker';
 
+// Sağlık Paneli Bileşeni, artık kendi içinde açılır/kapanır mantığını barındırıyor.
 const HealthPanel = ({ user }) => {
+  // YENİ: Panelin açık/kapalı durumunu tutan state
+  const [isOpen, setIsOpen] = React.useState(false);
+
   if (!user) {
     return <div className="text-center my-3"><span className="spinner-border spinner-border-sm"></span> Sağlık paneli yükleniyor...</div>;
   }
+
   const calculateAge = (birthDate) => {
     if (!birthDate) return null;
     const today = new Date();
@@ -19,47 +24,54 @@ const HealthPanel = ({ user }) => {
     }
     return age;
   };
-  const calculateBMI = (weight, height) => {
-    if (!weight || !height) return null;
-    const heightInMeters = height / 100;
-    const bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
-    return bmi;
-  };
-  const age = calculateAge(user.date_of_birth);
-  const bmi = calculateBMI(user.weight_kg, user.height_cm);
+
   const getUsernameFromEmail = (email) => {
     if (!email) return '';
     const namePart = email.split('@')[0];
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   };
+
+  const age = calculateAge(user.date_of_birth);
+
   return (
     <div className="card shadow-sm mb-4">
-      <div className="card-header"><h5>Sağlık Paneli</h5></div>
-      <div className="card-body">
-        <div className="row text-center align-items-center">
-          <div className="col-md-4 border-end">
-            <h6 className="text-muted">Hoş Geldin</h6>
-            <h4>{getUsernameFromEmail(user.email)}</h4>
-            <h6 className="mt-2">{age ? `${age} Yaşında` : 'Yaş Belirtilmemiş'}</h6>
-          </div>
-          <div className="col-md-4 border-end">
-            <BMIGauge bmi={bmi} />
-          </div>
-          <div className="col-md-4">
-            <h6 className="text-muted">Bilinen Kronik Hastalıklar</h6>
-            <h5 className="text-truncate" title={user.chronic_diseases || 'Belirtilmemiş'}>
-              {user.chronic_diseases || 'Belirtilmemiş'}
-            </h5>
-          </div>
+      {/* YENİ: Tıklanabilir Panel Başlığı */}
+      <div className="card-header d-flex justify-content-between align-items-center" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
+        <h5>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-person-circle me-2" viewBox="0 0 16 16">
+            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+            <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+          </svg>
+          Merhaba {getUsernameFromEmail(user.email)}, Sağlık Özetin
+        </h5>
+        {/* YENİ: Duruma göre yönü değişen ikon */}
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className={`bi bi-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 16 16">
+          <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+        </svg>
+      </div>
+
+      {/* YENİ: Bootstrap'in collapse class'ı ile açılır/kapanır içerik alanı */}
+      <div className={isOpen ? 'collapse show' : 'collapse'}>
+        <div className="card-body">
+            <div className="row text-center align-items-center">
+                <div className="col-md-4 mb-4 mb-md-0">
+                    <BMIGauge bmi={user.weight_kg && user.height_cm ? parseFloat((user.weight_kg / ((user.height_cm / 100) ** 2)).toFixed(1)) : null} />
+                </div>
+                 <div className="col-md-8">
+                   <WeightTracker />
+                </div>
+            </div>
+             <hr className="my-3" />
+             <div className="text-center text-muted small">
+                <strong>Yaş:</strong> {age || 'N/A'} | <strong>Kronik Hastalıklar:</strong> {user.chronic_diseases || 'Belirtilmemiş'}
+             </div>
         </div>
-        {/* Kilo Takip Modülü buraya entegre edildi */}
-        <hr className="my-4" />
-        <WeightTracker />
       </div>
     </div>
   );
 };
 
+// HealthTip bileşeninde değişiklik yok
 const HealthTip = ({ tip, isLoading }) => {
     return (
         <div className="card shadow-sm mb-4 bg-light border-primary">
@@ -75,13 +87,13 @@ const HealthTip = ({ tip, isLoading }) => {
     );
 };
 
-
 function Dashboard({ handleLogout }) {
-  const [user, setUser] = useState(null);
-  const [healthTip, setHealthTip] = useState("");
-  const [isTipLoading, setIsTipLoading] = useState(true);
+  const [user, setUser] = React.useState(null);
+  const [healthTip, setHealthTip] = React.useState("");
+  const [isTipLoading, setIsTipLoading] = React.useState(true);
 
-  useEffect(() => {
+  // Veri çekme ve bildirim mantığında değişiklik yok, bu yüzden aynı kalıyor.
+  React.useEffect(() => {
     const token = localStorage.getItem('userToken');
     if (!token) { 
       handleLogout(); 
@@ -93,6 +105,7 @@ function Dashboard({ handleLogout }) {
       try {
         const profilePromise = axios.get(`${apiUrl}/profile/me/`, { headers: { 'Authorization': `Bearer ${token}` } });
         const tipPromise = axios.get(`${apiUrl}/health-tip/`, { headers: { 'Authorization': `Bearer ${token}` } });
+        
         const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
         
         setUser(profileResponse.data);
@@ -106,55 +119,49 @@ function Dashboard({ handleLogout }) {
     };
     
     fetchInitialData();
-
   }, [handleLogout]);
   
-  useEffect(() => {
-    if (!user || Notification.permission !== 'granted') {
-      return;
-    }
+  React.useEffect(() => {
+    if (!user || Notification.permission !== 'granted') return;
+    
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
     
     const checkMedicationTimes = async () => {
         try {
-            const response = await axios.get(`${apiUrl}/medications/`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await axios.get(`${apiUrl}/medications/`, { headers: { 'Authorization': `Bearer ${token}` } });
             const meds = response.data;
-            
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             const currentDate = now.toISOString().split('T')[0];
     
             meds.forEach(med => {
               const times = med.times.split(',').map(t => t.trim());
-              
               if (times.includes(currentTime)) {
                 const notificationKey = `mia-notif-${med.id}-${currentDate}-${currentTime}`;
-                
                 if (!sessionStorage.getItem(notificationKey)) {
                   const notification = new Notification(`Mia'dan Hatırlatma: İlaç Zamanı!`, {
                     body: `${med.name} (${med.dosage} - ${med.quantity}) ilacınızı alma zamanı geldi.`,
                     icon: 'https://i.imgur.com/OnfAvOo.png',
                     tag: notificationKey
                   });
-                  notification.onclick = () => {
-                    window.focus();
-                  };
+                  notification.onclick = () => window.focus();
                   sessionStorage.setItem(notificationKey, 'true');
                 }
               }
             });
-    
           } catch (error) {
             console.error("İlaç hatırlatma servisi hatası:", error);
           }
     };
 
+    console.log("Bildirim servisi başlatıldı. Her 10 saniyede bir kontrol edilecek.");
     const intervalId = setInterval(checkMedicationTimes, 10000);
-
-    return () => clearInterval(intervalId);
+    
+    return () => {
+      console.log("Bildirim servisi durduruldu.");
+      clearInterval(intervalId);
+    };
   }, [user]);
 
   return (
@@ -169,11 +176,13 @@ function Dashboard({ handleLogout }) {
         </div>
       </nav>
       
+      {/* Güncellenmiş Sağlık Paneli */}
       <HealthPanel user={user} />
+      
+      {/* Günün Tavsiyesi panelin altında kalabilir, o anlık bir bilgidir. */}
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      {/* Kilo Takip Modülü artık HealthPanel içinde */}
-
+      {/* Asistan Kartları artık her zaman göz önünde */}
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">
@@ -194,6 +203,16 @@ function Dashboard({ handleLogout }) {
           </div>
         </div>
       </div>
+      
+      {/* CSS for transition */}
+      <style>{`
+        .transition-transform {
+          transition: transform 0.3s ease-in-out;
+        }
+        .rotate-180 {
+          transform: rotate(180deg);
+        }
+      `}</style>
     </div>
   );
 }
