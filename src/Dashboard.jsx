@@ -1,4 +1,4 @@
-import React, 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import BMIGauge from './BMIGauge';
@@ -182,7 +182,7 @@ function Dashboard({ handleLogout }) {
       {/* Günün Tavsiyesi panelin altında kalabilir, o anlık bir bilgidir. */}
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      {/* Asistan Kartları artık her zaman göz önünde */}
+      {/* Asistan Kartları artık her zaman gözünde */}
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">
@@ -218,3 +218,4 @@ function Dashboard({ handleLogout }) {
 }
 
 export default Dashboard;
+
