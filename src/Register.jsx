@@ -8,6 +8,7 @@ function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false); // YENİ STATE
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
@@ -71,7 +72,7 @@ function Register() {
               placeholder="••••••••"
             />
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
             <label htmlFor="confirmPasswordInput" className="form-label">Şifreyi Onayla</label>
             <input
               type="password"
@@ -84,9 +85,24 @@ function Register() {
             />
           </div>
 
+          {/* YENİ: Onay Kutusu */}
+          <div className="form-check mb-4">
+            <input 
+              className="form-check-input" 
+              type="checkbox" 
+              id="termsCheck"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+            />
+            <label className="form-check-label" htmlFor="termsCheck" style={{fontSize: '0.85rem'}}>
+              <Link to="/kullanim-kosullari" target="_blank">Kullanım Koşulları ve Sorumluluk Reddi Beyanını</Link> okudum ve kabul ediyorum.
+            </label>
+          </div>
+
           {message && <div className={`alert ${message.includes('başarıyla') ? 'alert-success' : 'alert-danger'} mb-3`}>{message}</div>}
 
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          {/* DÜZENLEME: Buton artık onay kutusuna bağlı */}
+          <button type="submit" className="btn btn-primary" disabled={isLoading || !termsAccepted}>
              {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 'Kayıt Ol'}
           </button>
         </form>
@@ -100,3 +116,4 @@ function Register() {
 }
 
 export default Register;
+
