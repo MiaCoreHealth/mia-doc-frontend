@@ -29,16 +29,20 @@ const HealthPanel = ({ user }) => {
   return (
     <div className="card shadow-sm mb-4">
       <div className="card-header d-flex justify-content-between align-items-center" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer', padding: '1.25rem' }}>
-        <h5 className="m-0 flex-grow-1 text-center text-primary fw-bold">
+        {/* DÜZELTME: Başlık ortalandı ve ikon değiştirildi */}
+        <div style={{ flex: 1 }}></div>
+        <h5 className="m-0 text-primary fw-bold">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-clipboard2-pulse-fill me-2" viewBox="0 0 16 16">
             <path d="M10 .5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5"/>
             <path d="M4.085 1H3.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1h-.585c.055.156.085.325.085.5V2a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 4 2v-.5c0-.175.03-.344.085-.5M9.98 5.356 11.372 10h.128a.5.5 0 0 1 0 1H11a.5.5 0 0 1-.479-.356l-.94-3.135-1.092 5.096a.5.5 0 0 1-.968.039L6.383 8.85l-.936 1.873A.5.5 0 0 1 5 11h-.5a.5.5 0 0 1 0-1h.128l1.372-2.744a.5.5 0 0 1 .956.05l1.103 2.453 1.25-5.223a.5.5 0 0 1 .956.05Z"/>
           </svg>
           Sağlık Panelim
         </h5>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className={`bi bi-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 16 16">
-          <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-        </svg>
+        <div className="d-flex justify-content-end" style={{ flex: 1 }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className={`bi bi-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 16 16">
+            <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </div>
       </div>
 
       <div className={isOpen ? 'collapse show' : 'collapse'}>
@@ -162,9 +166,10 @@ function Dashboard({ handleLogout }) {
       <div className="row mt-4">
         <div className="col-md-6 mb-4">
           <div className="action-card">
+            {/* DÜZELTME: İkon ve başlık orantılandı */}
             <div className="d-flex align-items-center mb-3">
-              <div className="action-card-icon bg-primary-light me-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 2.5a.5.5 0 0 0-1 0v4.328a2.5 2.5 0 0 0-2.031 2.475C5.468 11.23 6.6 12.5 8 12.5s2.532-1.27 2.532-2.697a2.5 2.5 0 0 0-2.031-2.475V2.5zM8 1a2.5 2.5 0 0 1 2.5 2.5V9a.5.5 0 0 1-1 0V5a.5.5 0 0 1-1 0V3.5a1.5 1.5 0 1 0-3 0V9a.5.5 0 0 1-1 0V3.5A2.5 2.5 0 0 1 8 1z"/></svg>
+              <div className="action-card-icon bg-primary-light me-3" style={{width: '40px', height: '40px'}}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 2.5a.5.5 0 0 0-1 0v4.328a2.5 2.5 0 0 0-2.031 2.475C5.468 11.23 6.6 12.5 8 12.5s2.532-1.27 2.532-2.697a2.5 2.5 0 0 0-2.031-2.475V2.5zM8 1a2.5 2.5 0 0 1 2.5 2.5V9a.5.5 0 0 1-1 0V5a.5.5 0 0 1-1 0V3.5a1.5 1.5 0 1 0-3 0V9a.5.5 0 0 1-1 0V3.5A2.5 2.5 0 0 1 8 1z"/></svg>
               </div>
               <h5 className="card-title mb-0">Rapor Analizi</h5>
             </div>
@@ -174,9 +179,10 @@ function Dashboard({ handleLogout }) {
         </div>
         <div className="col-md-6 mb-4">
           <div className="action-card">
+            {/* DÜZELTME: İkon ve başlık orantılandı */}
             <div className="d-flex align-items-center mb-3">
-              <div className="action-card-icon bg-success-light me-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a.5.5 0 0 0 .5-.5v-1.288c.353.033.712.05 1.074.05 3.328 0 6.038-2.08 6.038-5.672 0-2.083-1.22-3.874-3.048-4.783.05-.164.08-.334.08-.516 0-.82-.66-1.48-1.48-1.48-.553 0-1.037.3-1.29.742-.25.44-.69.804-1.23.952-1.27.33-2.628-.276-2.91-.494l-.06-.04a1.5 1.5 0 0 0-.876-.234c-.82 0-1.48.66-1.48 1.48 0 .182.03.352.08.516C1.22 4.456 0 6.247 0 8.328c0 3.593 2.71 5.672 6.038 5.672.362 0 .721-.017 1.074-.05V15.5a.5.5 0 0 0 .5.5zM4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+              <div className="action-card-icon bg-success-light me-3" style={{width: '40px', height: '40px'}}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a.5.5 0 0 0 .5-.5v-1.288c.353.033.712.05 1.074.05 3.328 0 6.038-2.08 6.038-5.672 0-2.083-1.22-3.874-3.048-4.783.05-.164.08-.334.08-.516 0-.82-.66-1.48-1.48-1.48-.553 0-1.037.3-1.29.742-.25.44-.69.804-1.23.952-1.27.33-2.628-.276-2.91-.494l-.06-.04a1.5 1.5 0 0 0-.876-.234c-.82 0-1.48.66-1.48 1.48 0 .182.03.352.08.516C1.22 4.456 0 6.247 0 8.328c0 3.593 2.71 5.672 6.038 5.672.362 0 .721-.017 1.074-.05V15.5a.5.5 0 0 0 .5.5zM4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
               </div>
               <h5 className="card-title mb-0">Hangi Doktora Gitmeliyim?</h5>
             </div>
