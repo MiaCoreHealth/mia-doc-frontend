@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { marked } from 'marked'; // İlaç bilgisi için
+import { marked } from 'marked';
 
-// --- YENİ TASARIM: İlaçlar için Modal (Açılır Pencere) Bileşeni ---
 const MedicationModal = ({ med, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -105,7 +104,6 @@ const MedicationModal = ({ med, onSave, onClose }) => {
   );
 };
 
-// --- İlaç Bilgisi için Modal ---
 const InfoModal = ({ title, content, onClose, isLoading }) => {
     const createMarkup = () => {
         if (!content) return { __html: '' };
@@ -132,7 +130,6 @@ const InfoModal = ({ title, content, onClose, isLoading }) => {
         </div>
     );
 };
-
 
 function Profile() {
   const [profileData, setProfileData] = useState({
@@ -279,7 +276,6 @@ function Profile() {
 
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          {/* DÜZELTME: Başlık değiştirildi */}
           <span className="navbar-brand fw-bold">Profilim</span>
           <div>
             <Link to="/" className="btn btn-outline-secondary">Ana Sayfa</Link>
@@ -288,7 +284,6 @@ function Profile() {
       </nav>
 
       <div className="row g-4">
-        {/* Sol Sütun: Kişisel Bilgiler */}
         <div className="col-lg-7">
           <div className="card shadow-sm h-100">
             <div className="card-body">
@@ -313,12 +308,10 @@ function Profile() {
           </div>
         </div>
 
-        {/* Sağ Sütun: İlaç ve Ayarlar */}
         <div className="col-lg-5">
           <div className="card shadow-sm h-100">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="mb-0">İlaçlarım</h5>
-              {/* DÜZELTME: Butonun stili daha küçük ve orantılı hale getirildi */}
               <button className="btn btn-primary btn-sm py-1 px-2" onClick={() => { setEditingMed(null); setShowMedModal(true); }}>+ Yeni Ekle</button>
             </div>
             <div className="card-body" style={{maxHeight: '400px', overflowY: 'auto'}}>
@@ -333,7 +326,6 @@ function Profile() {
                         <br/>
                         <small className="text-muted">Saat: {med.times}</small>
                       </div>
-                      {/* DÜZELTME: Buton boyutları eşitlendi */}
                       <div className="btn-group">
                         <button className="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center" style={{width: '32px', height: '32px'}} title="Bilgi Al" onClick={() => handleGetMedInfo(med.name)}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-lg" viewBox="0 0 16 16"><path d="m9.708 6.075-3.024.379-.108.502.595.108c.387.093.464.232.38.619l-.404 1.88a.5.5 0 1 0 .957.204l.404-1.88c.125-.582.028-.915-.451-1.074l-.595-.108.108-.502 3.024-.379a.5.5 0 0 0 .49-.595c-.078-.467-.36-.582-.687-.582-.326 0-.609.115-.687.582a.5.5 0 0 0 .49.595zM8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287z"/></svg>
@@ -350,7 +342,6 @@ function Profile() {
                 </ul>
               )}
             </div>
-             {/* DÜZELTME: Bildirim ayarları İlaçlarım kartının içine taşındı */}
             <div className="card-footer">
                 <h6 className="mb-2 small text-muted">Bildirim Ayarları</h6>
                 {notificationPermission === 'granted' && <p className="text-success small mb-0">İlaç hatırlatmaları için bildirimlere izin verdiniz.</p>}
@@ -367,4 +358,3 @@ function Profile() {
 }
 
 export default Profile;
-

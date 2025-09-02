@@ -182,8 +182,8 @@ function Dashboard({ handleLogout }) {
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Rapor Analizi</h5>
               <p className="card-text text-muted">Tıbbi raporlarınızı Mia'ya yorumlatın.</p>
-              {/* DÜZELTME: Buton boyutu eşitlendi */}
-              <Link to="/rapor-analizi" className="btn btn-primary mt-auto" style={{minWidth: '150px'}}>Başla</Link>
+              {/* DÜZELTME: Buton boyutu ve genişliği sabitlendi */}
+              <Link to="/rapor-analizi" className="btn btn-primary mt-auto" style={{ width: '150px', alignSelf: 'center' }}>Başla</Link>
             </div>
           </div>
         </div>
@@ -192,8 +192,8 @@ function Dashboard({ handleLogout }) {
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
               <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın.</p>
-              {/* DÜZELTME: Buton boyutu eşitlendi */}
-              <Link to="/semptom-analizi" className="btn btn-success mt-auto" style={{minWidth: '150px'}}>Başla</Link>
+              {/* DÜZELTME: Buton boyutu ve genişliği sabitlendi */}
+              <Link to="/semptom-analizi" className="btn btn-success mt-auto" style={{ width: '150px', alignSelf: 'center' }}>Başla</Link>
             </div>
           </div>
         </div>
