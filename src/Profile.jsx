@@ -23,7 +23,7 @@ const MedicationModal = ({ med, onSave, onClose }) => {
         notes: med.notes || '',
       });
     } else {
-      setFormData({ name: '', dosage: '', quantity: '', times: '', notes: '' });
+      setFormData({ name: '', dosage: '', quantity: '', times: '08:00', notes: '' });
     }
   }, [med]);
 
@@ -40,7 +40,7 @@ const MedicationModal = ({ med, onSave, onClose }) => {
   
   const handleFrequencyChange = (e) => {
       const count = parseInt(e.target.value, 10);
-      const newTimes = Array(count).fill("").join(', ');
+      const newTimes = Array(count).fill("08:00").join(', ');
       setFormData(prev => ({...prev, times: newTimes}));
   };
 
@@ -49,7 +49,7 @@ const MedicationModal = ({ med, onSave, onClose }) => {
     onSave(formData, med ? med.id : null);
   };
   
-  const frequency = formData.times.split(',').length;
+  const frequency = formData.times.split(',').length || 1;
 
   return (
     <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -71,14 +71,14 @@ const MedicationModal = ({ med, onSave, onClose }) => {
                   <input type="text" name="dosage" value={formData.dosage} onChange={handleChange} className="form-control" placeholder="Örn: 500 mg" required />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Miktar</label>
+                  <label className="form-label">Her Seferde Alınacak Miktar</label>
                   <input type="text" name="quantity" value={formData.quantity} onChange={handleChange} className="form-control" placeholder="Örn: 1 tablet" required />
                 </div>
               </div>
               <div className="mb-3">
                 <label className="form-label">Günde Kaç Kez?</label>
                 <select className="form-select" value={frequency} onChange={handleFrequencyChange}>
-                    {[1, 2, 3, 4].map(num => <option key={num} value={num}>{num}</option>)}
+                    {[1, 2, 3, 4, 5, 6].map(num => <option key={num} value={num}>{num}</option>)}
                 </select>
               </div>
               <div className="row">
@@ -105,7 +105,7 @@ const MedicationModal = ({ med, onSave, onClose }) => {
   );
 };
 
-// --- YENİ TASARIM: İlaç Bilgisi için Modal ---
+// --- İlaç Bilgisi için Modal ---
 const InfoModal = ({ title, content, onClose, isLoading }) => {
     const createMarkup = () => {
         if (!content) return { __html: '' };
@@ -114,7 +114,7 @@ const InfoModal = ({ title, content, onClose, isLoading }) => {
 
     return (
         <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-            <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                 <div className="modal-content">
                     <div className="modal-header">
                         <h5 className="modal-title">{title}</h5>
@@ -122,7 +122,7 @@ const InfoModal = ({ title, content, onClose, isLoading }) => {
                     </div>
                     <div className="modal-body">
                         {isLoading ? (
-                            <div className="text-center"><span className="spinner-border"></span></div>
+                            <div className="text-center p-4"><span className="spinner-border"></span></div>
                         ) : (
                             <div dangerouslySetInnerHTML={createMarkup()} />
                         )}
@@ -143,22 +143,18 @@ function Profile() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // İlaç yönetimi için state'ler
   const [meds, setMeds] = useState([]);
   const [isMedsLoading, setIsMedsLoading] = useState(true);
   const [medError, setMedError] = useState('');
   const [showMedModal, setShowMedModal] = useState(false);
   const [editingMed, setEditingMed] = useState(null);
 
-  // İlaç bilgisi için state'ler
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [infoContent, setInfoContent] = useState('');
   const [infoTitle, setInfoTitle] = useState('');
   const [isInfoLoading, setIsInfoLoading] = useState(false);
   
-  // Bildirim izni için state
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
-
 
   const fetchProfile = async () => {
     const token = localStorage.getItem('userToken');
@@ -220,7 +216,6 @@ function Profile() {
     }
   };
   
-  // --- İLAÇ FONKSİYONLARI ---
   const handleMedSave = async (medData, medId) => {
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -232,7 +227,7 @@ function Profile() {
       await apiCall;
       setShowMedModal(false);
       setEditingMed(null);
-      fetchMeds(); // Listeyi yenile
+      fetchMeds(); 
     } catch (err) {
       setMedError(medId ? 'İlaç güncellenirken bir hata oluştu.' : 'İlaç eklenirken bir hata oluştu.');
     }
@@ -284,7 +279,8 @@ function Profile() {
 
       <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
         <div className="container-fluid">
-          <span className="navbar-brand fw-bold">Profilim ve Ayarlar</span>
+          {/* DÜZELTME: Başlık değiştirildi */}
+          <span className="navbar-brand fw-bold">Profilim</span>
           <div>
             <Link to="/" className="btn btn-outline-secondary">Ana Sayfa</Link>
           </div>
@@ -319,14 +315,15 @@ function Profile() {
 
         {/* Sağ Sütun: İlaç ve Ayarlar */}
         <div className="col-lg-5">
-          <div className="card shadow-sm mb-4">
+          <div className="card shadow-sm h-100">
             <div className="card-header d-flex justify-content-between align-items-center">
               <h5 className="mb-0">İlaçlarım</h5>
-              <button className="btn btn-primary btn-sm" onClick={() => { setEditingMed(null); setShowMedModal(true); }}>+ Yeni Ekle</button>
+              {/* DÜZELTME: Butonun stili daha küçük ve orantılı hale getirildi */}
+              <button className="btn btn-primary btn-sm py-1 px-2" onClick={() => { setEditingMed(null); setShowMedModal(true); }}>+ Yeni Ekle</button>
             </div>
             <div className="card-body" style={{maxHeight: '400px', overflowY: 'auto'}}>
               {medError && <div className="alert alert-danger">{medError}</div>}
-              {isMedsLoading ? <p>Yükleniyor...</p> : meds.length === 0 ? <p className="text-muted">Kayıtlı ilacınız yok.</p> : (
+              {isMedsLoading ? <p>Yükleniyor...</p> : meds.length === 0 ? <p className="text-muted small">Kayıtlı ilacınız yok.</p> : (
                 <ul className="list-group list-group-flush">
                   {meds.map(med => (
                     <li key={med.id} className="list-group-item d-flex justify-content-between align-items-start">
@@ -336,28 +333,30 @@ function Profile() {
                         <br/>
                         <small className="text-muted">Saat: {med.times}</small>
                       </div>
+                      {/* DÜZELTME: Buton boyutları eşitlendi */}
                       <div className="btn-group">
-                        <button className="btn btn-sm btn-outline-info" title="Bilgi Al" onClick={() => handleGetMedInfo(med.name)}>i</button>
-                        <button className="btn btn-sm btn-outline-secondary" title="Düzenle" onClick={() => { setEditingMed(med); setShowMedModal(true); }}>✎</button>
-                        <button className="btn btn-sm btn-outline-danger" title="Sil" onClick={() => handleDeleteMed(med.id)}>🗑</button>
+                        <button className="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center" style={{width: '32px', height: '32px'}} title="Bilgi Al" onClick={() => handleGetMedInfo(med.name)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-lg" viewBox="0 0 16 16"><path d="m9.708 6.075-3.024.379-.108.502.595.108c.387.093.464.232.38.619l-.404 1.88a.5.5 0 1 0 .957.204l.404-1.88c.125-.582.028-.915-.451-1.074l-.595-.108.108-.502 3.024-.379a.5.5 0 0 0 .49-.595c-.078-.467-.36-.582-.687-.582-.326 0-.609.115-.687.582a.5.5 0 0 0 .49.595zM8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287z"/></svg>
+                        </button>
+                        <button className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" style={{width: '32px', height: '32px'}} title="Düzenle" onClick={() => { setEditingMed(med); setShowMedModal(true); }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-pencil-fill" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center" style={{width: '32px', height: '32px'}} title="Sil" onClick={() => handleDeleteMed(med.id)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash-fill" viewBox="0 0 16 16"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/></svg>
+                        </button>
                       </div>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-          </div>
-          
-          <div className="card shadow-sm">
-            <div className="card-header"><h5 className="mb-0">Bildirim Ayarları</h5></div>
-            <div className="card-body">
-                {notificationPermission === 'granted' && <p className="text-success">İlaç hatırlatmaları için bildirimlere izin verdiniz.</p>}
-                {notificationPermission === 'denied' && <p className="text-danger">Bildirimleri engellediniz. Hatırlatma alamazsınız. Ayarı tarayıcınızdan değiştirebilirsiniz.</p>}
+             {/* DÜZELTME: Bildirim ayarları İlaçlarım kartının içine taşındı */}
+            <div className="card-footer">
+                <h6 className="mb-2 small text-muted">Bildirim Ayarları</h6>
+                {notificationPermission === 'granted' && <p className="text-success small mb-0">İlaç hatırlatmaları için bildirimlere izin verdiniz.</p>}
+                {notificationPermission === 'denied' && <p className="text-danger small mb-0">Bildirimleri engellediniz. Ayarı tarayıcınızdan değiştirebilirsiniz.</p>}
                 {notificationPermission === 'default' && (
-                    <>
-                        <p>İlaç hatırlatmaları almak için bildirimlere izin verin.</p>
-                        <button className="btn btn-success" onClick={handleRequestNotificationPermission}>Bildirimlere İzin Ver</button>
-                    </>
+                    <button className="btn btn-success btn-sm w-100" onClick={handleRequestNotificationPermission}>Bildirimlere İzin Ver</button>
                 )}
             </div>
           </div>

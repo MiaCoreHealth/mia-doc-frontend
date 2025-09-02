@@ -4,9 +4,7 @@ import axios from 'axios';
 import BMIGauge from './BMIGauge';
 import WeightTracker from './WeightTracker';
 
-// Sağlık Paneli Bileşeni, artık kendi içinde açılır/kapanır mantığını barındırıyor.
 const HealthPanel = ({ user }) => {
-  // YENİ: Panelin açık/kapalı durumunu tutan state
   const [isOpen, setIsOpen] = React.useState(false);
 
   if (!user) {
@@ -29,7 +27,6 @@ const HealthPanel = ({ user }) => {
 
   return (
     <div className="card shadow-sm mb-4">
-      {/* YENİ: Tıklanabilir Panel Başlığı - Ortalanmış ve daha şık */}
       <div className="card-header d-flex justify-content-between align-items-center" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
         <h5 className="m-0 flex-grow-1 text-center text-primary fw-bold">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-clipboard2-pulse-fill me-2" viewBox="0 0 16 16">
@@ -38,13 +35,11 @@ const HealthPanel = ({ user }) => {
           </svg>
           Sağlık Panelim
         </h5>
-        {/* YENİ: Duruma göre yönü değişen ikon */}
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className={`bi bi-chevron-down transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 16 16">
           <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
         </svg>
       </div>
 
-      {/* YENİ: Bootstrap'in collapse class'ı ile açılır/kapanır içerik alanı */}
       <div className={isOpen ? 'collapse show' : 'collapse'}>
         <div className="card-body">
             <div className="row text-center align-items-center">
@@ -65,7 +60,6 @@ const HealthPanel = ({ user }) => {
   );
 };
 
-// HealthTip bileşeninde değişiklik yok
 const HealthTip = ({ tip, isLoading }) => {
     return (
         <div className="card shadow-sm mb-4 bg-light border-primary">
@@ -86,8 +80,8 @@ function Dashboard({ handleLogout }) {
   const [healthTip, setHealthTip] = React.useState("");
   const [isTipLoading, setIsTipLoading] = React.useState(true);
 
-  // Veri çekme ve bildirim mantığında değişiklik yok, bu yüzden aynı kalıyor.
   React.useEffect(() => {
+    let isMounted = true;
     const token = localStorage.getItem('userToken');
     if (!token) { 
       handleLogout(); 
@@ -102,28 +96,35 @@ function Dashboard({ handleLogout }) {
         
         const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
         
-        setUser(profileResponse.data);
-        setHealthTip(tipResponse.data.tip);
-        setIsTipLoading(false);
+        if (isMounted) {
+            setUser(profileResponse.data);
+            setHealthTip(tipResponse.data.tip);
+            setIsTipLoading(false);
+        }
 
       } catch (error) {
         console.error("Başlangıç verileri alınamadı:", error);
-        handleLogout();
+        if (isMounted) handleLogout();
       }
     };
     
     fetchInitialData();
+    
+    return () => { isMounted = false; };
   }, [handleLogout]);
   
   React.useEffect(() => {
     if (!user || Notification.permission !== 'granted') return;
     
+    let isMounted = true;
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
     
     const checkMedicationTimes = async () => {
         try {
             const response = await axios.get(`${apiUrl}/medications/`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!isMounted) return;
+
             const meds = response.data;
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -154,6 +155,7 @@ function Dashboard({ handleLogout }) {
     
     return () => {
       console.log("Bildirim servisi durduruldu.");
+      isMounted = false;
       clearInterval(intervalId);
     };
   }, [user]);
@@ -170,20 +172,18 @@ function Dashboard({ handleLogout }) {
         </div>
       </nav>
       
-      {/* Güncellenmiş Sağlık Paneli */}
       <HealthPanel user={user} />
       
-      {/* Günün Tavsiyesi panelin altında kalabilir, o anlık bir bilgidir. */}
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      {/* Asistan Kartları artık her zaman gözünde */}
       <div className="row mt-4 justify-content-center">
         <div className="col-md-5 mb-4">
           <div className="card h-100 shadow-sm">
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Rapor Analizi</h5>
               <p className="card-text text-muted">Tıbbi raporlarınızı Mia'ya yorumlatın.</p>
-              <Link to="/rapor-analizi" className="btn btn-primary mt-auto">Başla</Link>
+              {/* DÜZELTME: Buton boyutu eşitlendi */}
+              <Link to="/rapor-analizi" className="btn btn-primary mt-auto" style={{minWidth: '150px'}}>Başla</Link>
             </div>
           </div>
         </div>
@@ -192,13 +192,13 @@ function Dashboard({ handleLogout }) {
             <div className="card-body text-center d-flex flex-column justify-content-center">
               <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
               <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın.</p>
-              <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla</Link>
+              {/* DÜZELTME: Buton boyutu eşitlendi */}
+              <Link to="/semptom-analizi" className="btn btn-success mt-auto" style={{minWidth: '150px'}}>Başla</Link>
             </div>
           </div>
         </div>
       </div>
       
-      {/* CSS for transition */}
       <style>{`
         .transition-transform {
           transition: transform 0.3s ease-in-out;
