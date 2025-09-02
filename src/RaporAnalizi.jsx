@@ -1,169 +1,133 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import History from './History.jsx';
 
-function RaporAnalizi({ handleLogout }) {
-  const [user, setUser] = useState(null);
+function RaporAnalizi() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historyKey, setHistoryKey] = useState(0);
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
-
-  // Otomatik kaydırma için bir referans oluşturuyoruz
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Mesajlar her değiştiğinde en alta kaydır
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-
-  const getUsernameFromEmail = (email) => {
-    if (!email) return '';
-    const namePart = email.split('@')[0];
-    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
-  };
-
   useEffect(() => {
-    const token = localStorage.getItem('userToken');
-    if (!token) { 
-      handleLogout(); 
-      return; 
-    }
-    const apiUrl = import.meta.env.VITE_API_URL;
-    axios.get(`${apiUrl}/profile/me/`, { headers: { 'Authorization': `Bearer ${token}` } })
-      .then(response => {
-        const fetchedUser = response.data;
-        setUser(fetchedUser);
-        setMessages([
-          {
-            sender: 'mia-doc',
-            text: `Merhaba ${getUsernameFromEmail(fetchedUser.email)}! Ben kişisel sağlık asistanın Mia. Analiz etmemi istediğin bir raporu yükleyebilir veya aklına takılan bir sağlık sorusunu sorabilirsin.`
-          }
-        ]);
-      })
-      .catch(error => {
-        console.error("Kullanıcı profili alınamadı:", error);
-        handleLogout();
-      });
-  }, [handleLogout]);
+    setMessages([
+      { sender: 'mia', text: 'Merhaba! Ben Mia, kişisel sağlık asistanın. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.' }
+    ]);
+  }, []);
 
   const sendMessageToApi = async ({ file, question }) => {
     if (!file && (!question || !question.trim())) return;
+
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
+
+    const userMessages = [];
     if (file) {
-      setMessages(prev => [...prev, { sender: 'user', text: `Yüklendi: ${file.name}` }]);
+      userMessages.push({ sender: 'user', text: `Yüklendi: ${file.name}` });
     }
     if (question) {
-      setMessages(prev => [...prev, { sender: 'user', text: question }]);
-      setCurrentQuestion("");
+      userMessages.push({ sender: 'user', text: question });
     }
-    setMessages(prev => [...prev, { sender: 'mia-doc', text: '...' }]);
+    setMessages(prev => [...prev, ...userMessages]);
+    setCurrentQuestion("");
+    
     const formData = new FormData();
-    const historyToSend = messages.filter(m => m.text.startsWith('Merhaba') === false);
+    const historyToSend = messages.filter(m => !m.text.startsWith('Merhaba'));
+    
     if (file) formData.append('file', file);
     if (question) formData.append('question', question);
-    formData.append('history_json', JSON.stringify(historyToSend));
+    
+    formData.append('history_json', JSON.stringify([...historyToSend, ...userMessages]));
     formData.append('for_someone_else', forSomeoneElse);
+
     try {
       const response = await axios.post(`${apiUrl}/report/analyze/`, formData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: response.data.analysis_result }]);
-      if (file && !forSomeoneElse) {
-        setHistoryKey(prevKey => prevKey + 1);
-      }
+      setMessages(prev => [...prev, { sender: 'mia', text: response.data.analysis_result }]);
     } catch (error) {
-      const errorText = error.response ? error.response.data.detail : 'Analiz sırasında bir ağ hatası oluştu.';
-      setMessages(prev => [...prev.slice(0, -1), { sender: 'mia-doc', text: `Bir hata oluştu: ${errorText}` }]);
+      const errorText = error.response?.data?.detail || 'Analiz sırasında bir ağ hatası oluştu.';
+      setMessages(prev => [...prev, { sender: 'mia', text: `Bir hata oluştu: ${errorText}` }]);
     } finally {
       setIsLoading(false);
-      if (file && document.getElementById('fileInput')) {
-        document.getElementById('fileInput').value = '';
+      if (file && fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) { sendMessageToApi({ file: file }); }
+    if (file) {
+      sendMessageToApi({ file });
+    }
   };
 
   const handleSendQuestion = (event) => {
     event.preventDefault();
-    if (!currentQuestion.trim()) return;
     sendMessageToApi({ question: currentQuestion });
   };
 
   return (
-    <div>
-      <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
-        <div className="container-fluid">
-          <span className="navbar-brand">Mia ile Rapor Analizi</span>
-          <div>
-            <Link to="/" className="btn btn-outline-secondary me-2">Ana Sayfa</Link>
-            <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
-          </div>
-        </div>
-      </nav>
-      
-      <div className="chat-window card shadow-sm mb-3">
-        {/* --- DEĞİŞİKLİK BURADA --- */}
-        <div className="card-body" style={{ height: '50vh', overflowY: 'auto' }}>
-          {messages.map((msg, index) => (
-            <div key={index} className={`d-flex align-items-end mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-              {msg.sender === 'mia-doc' && 
-                <img 
-                  src="https://i.imgur.com/OnfAvOo.png" 
-                  alt="Mia Avatar" 
-                  style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} 
-                />
-              }
-              <div className={`message-bubble ${msg.sender}`}>{msg.text}</div>
+    <div className="chat-page-container">
+      <div className="chat-header">
+        <Link to="/" className="btn btn-outline-secondary btn-sm me-3">← Geri</Link>
+        <h5>Rapor Analizi Asistanı</h5>
+      </div>
+
+      <div className="chat-messages">
+        {messages.map((msg, index) => (
+          <div key={index} className={`message-row ${msg.sender === 'user' ? 'user-row' : 'mia-row'}`}>
+            {msg.sender === 'mia' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
+            <div className={`message-bubble ${msg.sender === 'user' ? 'user-bubble' : 'mia-bubble'}`}>
+              {msg.text}
             </div>
-          ))}
-          {isLoading && messages[messages.length - 1]?.text === '...' && (
-             <div className="d-flex align-items-end mb-3 justify-content-start">
-               <img 
-                 src="https://i.imgur.com/OnfAvOo.png" 
-                 alt="Mia Avatar" 
-                 style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} 
-               />
-               <div className="message-bubble mia-doc">
-                 <span className="spinner-border spinner-border-sm"></span> Mia düşünüyor...
-               </div>
-             </div>
-          )}
-          {/* Otomatik kaydırma için boş div */}
-          <div ref={messagesEndRef} />
+          </div>
+        ))}
+        {isLoading && (
+          <div className="message-row mia-row">
+            <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
+            <div className="message-bubble mia-bubble">
+                Mia düşünüyor...
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="chat-input-area">
+        <form onSubmit={handleSendQuestion} className="chat-input-form">
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }} />
+          <label htmlFor="fileInput" className="send-button" style={{backgroundColor: '#6c757d', cursor: 'pointer'}}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-paperclip" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></svg>
+          </label>
+          <input
+            type="text"
+            className="chat-input"
+            placeholder="Takip sorunuzu buraya yazın..."
+            value={currentQuestion}
+            onChange={(e) => setCurrentQuestion(e.target.value)}
+            disabled={isLoading}
+          />
+          <button type="submit" className="send-button" disabled={isLoading || !currentQuestion.trim()}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-send-fill" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
+          </button>
+        </form>
+         <div className="form-check mt-2 ms-1">
+            <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
+            <label className="form-check-label small text-muted" htmlFor="forSomeoneElseCheck">Bu rapor başkasına ait (geçmişe kaydedilmeyecek)</label>
         </div>
       </div>
-
-      <form onSubmit={handleSendQuestion} className="input-group mb-3">
-        <label className="btn btn-secondary" htmlFor="fileInput">📎 Rapor Yükle</label>
-        <input type="file" className="form-control" onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }}/>
-        <input type="text" className="form-control" placeholder="Mia'ya bir soru sor..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading} />
-        <button className="btn btn-primary" type="submit" disabled={isLoading || !currentQuestion.trim()}>
-          {isLoading ? '...' : 'Gönder'}
-        </button>
-      </form>
-
-      <div className="form-check mb-3">
-        <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
-        <label className="form-check-label" htmlFor="forSomeoneElseCheck">
-          Bu rapor başkasına ait (geçmişe kaydedilmeyecek)
-        </label>
-      </div>
-
-      <History key={historyKey} />
     </div>
   );
 }

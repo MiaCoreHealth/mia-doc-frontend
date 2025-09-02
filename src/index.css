@@ -10,6 +10,8 @@
   --muted-text-color: #6B7280; /* Normal Gri */
   --card-background: #FFFFFF; /* Beyaz */
   --border-color: #E5E7EB; /* Açık Gri Sınır */
+  --mia-bubble-bg: #F3F4F6; /* Mia'nın mesaj balonu rengi */
+  --user-bubble-bg: var(--primary-color); /* Kullanıcının mesaj balonu rengi */
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
@@ -18,112 +20,173 @@ body {
   color: var(--text-color);
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* İçeriği yukarıdan başlat */
+  align-items: flex-start;
   min-height: 100vh;
-  padding-top: 4rem; /* İçeriğe üstten boşluk ver */
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
-/* Ana Konteyner Stili */
 #root {
   width: 100%;
-  max-width: 900px; /* Ana içeriğin maksimum genişliği */
+  max-width: 900px;
   padding: 1rem;
 }
 
+/* Giriş/Kayıt Formu Stilleri (Değişiklik yok) */
+.auth-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+.auth-card { background-color: var(--card-background); border-radius: 1rem; padding: 2.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); width: 100%; max-width: 450px; border: 1px solid var(--border-color); }
+.auth-header { text-align: center; margin-bottom: 2rem; }
+.auth-header .logo { color: var(--primary-color); font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+.auth-header .tagline { color: var(--muted-text-color); }
+.form-label { font-weight: 500; margin-bottom: 0.5rem; }
+.form-control { border-radius: 0.5rem; border: 1px solid var(--border-color); padding: 0.75rem 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+.form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); outline: none; }
+.btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); border-radius: 0.5rem; padding: 0.75rem 1rem; font-weight: 600; transition: background-color 0.2s; width: 100%; }
+.btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
+.auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--muted-text-color); }
+.auth-footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+.auth-footer a:hover { text-decoration: underline; }
 
-/* --- YENİ GİRİŞ/KAYIT FORMU STİLLERİ --- */
 
-.auth-container {
+/* --- YENİ MODERN SOHBET ARAYÜZÜ STİLLERİ --- */
+
+.chat-page-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.auth-card {
+  height: 80vh; /* Sayfanın yüksekliğini ayarlar */
   background-color: var(--card-background);
   border-radius: 1rem;
-  padding: 2.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  width: 100%;
-  max-width: 450px;
-  border: 1px solid var(--border-color);
+  overflow: hidden;
 }
 
-.auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
+.chat-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
 }
 
-.auth-header .logo {
-    color: var(--primary-color);
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-}
-
-.auth-header .tagline {
-    color: var(--muted-text-color);
-}
-
-/* Form Elemanları */
-.form-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-.form-control {
-    border-radius: 0.5rem;
-    border: 1px solid var(--border-color);
-    padding: 0.75rem 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    outline: none;
-}
-
-/* Buton Stilleri */
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
+.chat-header h5 {
+  margin-bottom: 0;
   font-weight: 600;
-  transition: background-color 0.2s;
-  width: 100%;
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  border-color: var(--primary-hover);
+.chat-messages {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.auth-footer {
-    text-align: center;
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: var(--muted-text-color);
+.message-row {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: flex-end;
 }
 
-.auth-footer a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
+.message-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 1.25rem;
+  max-width: 75%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
-.auth-footer a:hover {
-    text-decoration: underline;
+.mia-row {
+  justify-content: flex-start;
+}
+.user-row {
+  justify-content: flex-end;
 }
 
-/* Diğer Genel Stiller */
+.mia-bubble {
+  background-color: var(--mia-bubble-bg);
+  color: var(--text-color);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.user-bubble {
+  background-color: var(--user-bubble-bg);
+  color: white;
+  border-bottom-right-radius: 0.25rem;
+}
+
 .avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
+  align-self: flex-start; /* Avatarı yukarıda tut */
 }
+
+/* "Yazıyor..." Animasyonu */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+}
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    background-color: #9ca3af;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+
+
+/* Giriş Alanı */
+.chat-input-area {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--mia-bubble-bg);
+}
+
+.chat-input-form {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chat-input {
+    flex-grow: 1;
+    border-radius: 9999px; /* Tam yuvarlak */
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+}
+.chat-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+}
+
+.send-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background-color: var(--primary-hover);
+}
+.send-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
