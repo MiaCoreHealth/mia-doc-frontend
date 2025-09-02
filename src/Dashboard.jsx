@@ -4,6 +4,7 @@ import axios from 'axios';
 import BMIGauge from './BMIGauge';
 import WeightTracker from './WeightTracker';
 
+// Sağlık Paneli Bileşeni
 const HealthPanel = ({ user }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -27,8 +28,8 @@ const HealthPanel = ({ user }) => {
 
   return (
     <div className="card shadow-sm mb-4">
-      <div className="card-header d-flex justify-content-between align-items-center" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
-        <h5 className="m-0 flex-grow-1 text-center text-primary fw-bold">
+      <div className="card-header d-flex justify-content-between align-items-center" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer', padding: '1.25rem' }}>
+        <h5 className="m-0 flex-grow-1 text-primary fw-bold">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-clipboard2-pulse-fill me-2" viewBox="0 0 16 16">
             <path d="M10 .5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5"/>
             <path d="M4.085 1H3.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1h-.585c.055.156.085.325.085.5V2a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 4 2v-.5c0-.175.03-.344.085-.5M9.98 5.356 11.372 10h.128a.5.5 0 0 1 0 1H11a.5.5 0 0 1-.479-.356l-.94-3.135-1.092 5.096a.5.5 0 0 1-.968.039L6.383 8.85l-.936 1.873A.5.5 0 0 1 5 11h-.5a.5.5 0 0 1 0-1h.128l1.372-2.744a.5.5 0 0 1 .956.05l1.103 2.453 1.25-5.223a.5.5 0 0 1 .956.05Z"/>
@@ -60,11 +61,12 @@ const HealthPanel = ({ user }) => {
   );
 };
 
+// Günün Tavsiyesi Bileşeni
 const HealthTip = ({ tip, isLoading }) => {
     return (
-        <div className="card shadow-sm mb-4 bg-light border-primary">
+        <div className="card shadow-sm mb-4 bg-light">
             <div className="card-body text-center">
-                <h6 className="card-title text-primary">💡 Mia'dan Günün Tavsiyesi</h6>
+                <h6 className="card-title" style={{color: 'var(--primary-color)'}}>💡 Mia'dan Günün Tavsiyesi</h6>
                 {isLoading ? (
                     <p className="card-text fst-italic">Sana özel bir tavsiye hazırlıyorum...</p>
                 ) : (
@@ -80,56 +82,45 @@ function Dashboard({ handleLogout }) {
   const [healthTip, setHealthTip] = React.useState("");
   const [isTipLoading, setIsTipLoading] = React.useState(true);
 
+  // İlaç hatırlatma ve veri çekme mantığı aynı kalıyor.
   React.useEffect(() => {
     let isMounted = true;
     const token = localStorage.getItem('userToken');
-    if (!token) { 
-      handleLogout(); 
-      return; 
-    }
+    if (!token) { handleLogout(); return; }
     const apiUrl = import.meta.env.VITE_API_URL;
 
     const fetchInitialData = async () => {
       try {
         const profilePromise = axios.get(`${apiUrl}/profile/me/`, { headers: { 'Authorization': `Bearer ${token}` } });
         const tipPromise = axios.get(`${apiUrl}/health-tip/`, { headers: { 'Authorization': `Bearer ${token}` } });
-        
         const [profileResponse, tipResponse] = await Promise.all([profilePromise, tipPromise]);
-        
         if (isMounted) {
             setUser(profileResponse.data);
             setHealthTip(tipResponse.data.tip);
             setIsTipLoading(false);
         }
-
       } catch (error) {
         console.error("Başlangıç verileri alınamadı:", error);
         if (isMounted) handleLogout();
       }
     };
-    
     fetchInitialData();
-    
     return () => { isMounted = false; };
   }, [handleLogout]);
   
   React.useEffect(() => {
     if (!user || Notification.permission !== 'granted') return;
-    
     let isMounted = true;
     const token = localStorage.getItem('userToken');
     const apiUrl = import.meta.env.VITE_API_URL;
-    
     const checkMedicationTimes = async () => {
         try {
             const response = await axios.get(`${apiUrl}/medications/`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (!isMounted) return;
-
             const meds = response.data;
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             const currentDate = now.toISOString().split('T')[0];
-    
             meds.forEach(med => {
               const times = med.times.split(',').map(t => t.trim());
               if (times.includes(currentTime)) {
@@ -149,52 +140,44 @@ function Dashboard({ handleLogout }) {
             console.error("İlaç hatırlatma servisi hatası:", error);
           }
     };
-
-    console.log("Bildirim servisi başlatıldı. Her 10 saniyede bir kontrol edilecek.");
     const intervalId = setInterval(checkMedicationTimes, 10000);
-    
-    return () => {
-      console.log("Bildirim servisi durduruldu.");
-      isMounted = false;
-      clearInterval(intervalId);
-    };
+    return () => { isMounted = false; clearInterval(intervalId); };
   }, [user]);
 
   return (
     <div>
-      <nav className="navbar navbar-light bg-light rounded mb-4 shadow-sm">
+      <nav className="navbar main-navbar mb-4">
         <div className="container-fluid">
-          <span className="navbar-brand">Miacore Health Ana Sayfa</span>
+          <span className="navbar-brand">MiaCore Health</span>
           <div>
-            <Link to="/profile" className="btn btn-outline-secondary me-2">Profilim</Link>
-            <button onClick={handleLogout} className="btn btn-outline-danger">Çıkış Yap</button>
+            <Link to="/profile" className="btn btn-outline-secondary me-2 btn-sm">Profilim</Link>
+            <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">Çıkış Yap</button>
           </div>
         </div>
       </nav>
       
       <HealthPanel user={user} />
-      
       <HealthTip tip={healthTip} isLoading={isTipLoading} />
 
-      <div className="row mt-4 justify-content-center">
-        <div className="col-md-5 mb-4">
-          <div className="card h-100 shadow-sm">
-            <div className="card-body text-center d-flex flex-column justify-content-center">
-              <h5 className="card-title">Rapor Analizi</h5>
-              <p className="card-text text-muted">Tıbbi raporlarınızı Mia'ya yorumlatın.</p>
-              {/* DÜZELTME: Buton boyutu ve genişliği sabitlendi */}
-              <Link to="/rapor-analizi" className="btn btn-primary mt-auto" style={{ width: '150px', alignSelf: 'center' }}>Başla</Link>
+      <div className="row mt-4">
+        <div className="col-md-6 mb-4">
+          <div className="action-card">
+            <div className="action-card-icon bg-primary-light">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 2.5a.5.5 0 0 0-1 0v4.328a2.5 2.5 0 0 0-2.031 2.475C5.468 11.23 6.6 12.5 8 12.5s2.532-1.27 2.532-2.697a2.5 2.5 0 0 0-2.031-2.475V2.5zM8 1a2.5 2.5 0 0 1 2.5 2.5V9a.5.5 0 0 1-1 0V5a.5.5 0 0 1-1 0V3.5a1.5 1.5 0 1 0-3 0V9a.5.5 0 0 1-1 0V3.5A2.5 2.5 0 0 1 8 1z"/></svg>
             </div>
+            <h5 className="card-title">Rapor Analizi</h5>
+            <p className="card-text">Tıbbi raporlarınızı Mia'ya yükleyip anında, kişiselleştirilmiş yorumlar alın.</p>
+            <Link to="/rapor-analizi" className="btn btn-primary mt-auto">Başla</Link>
           </div>
         </div>
-        <div className="col-md-5 mb-4">
-          <div className="card h-100 shadow-sm">
-            <div className="card-body text-center d-flex flex-column justify-content-center">
-              <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
-              <p className="card-text text-muted">Belirtilerinizi Mia'ya anlatın.</p>
-              {/* DÜZELTME: Buton boyutu ve genişliği sabitlendi */}
-              <Link to="/semptom-analizi" className="btn btn-success mt-auto" style={{ width: '150px', alignSelf: 'center' }}>Başla</Link>
+        <div className="col-md-6 mb-4">
+          <div className="action-card">
+            <div className="action-card-icon bg-success-light">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a.5.5 0 0 0 .5-.5v-1.288c.353.033.712.05 1.074.05 3.328 0 6.038-2.08 6.038-5.672 0-2.083-1.22-3.874-3.048-4.783.05-.164.08-.334.08-.516 0-.82-.66-1.48-1.48-1.48-.553 0-1.037.3-1.29.742-.25.44-.69.804-1.23.952-1.27.33-2.628-.276-2.91-.494l-.06-.04a1.5 1.5 0 0 0-.876-.234c-.82 0-1.48.66-1.48 1.48 0 .182.03.352.08.516C1.22 4.456 0 6.247 0 8.328c0 3.593 2.71 5.672 6.038 5.672.362 0 .721-.017 1.074-.05V15.5a.5.5 0 0 0 .5.5zM4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
             </div>
+            <h5 className="card-title">Hangi Doktora Gitmeliyim?</h5>
+            <p className="card-text">Belirtilerinizi Mia'ya anlatın, sizi en doğru tıbbi branşa yönlendirelim.</p>
+            <Link to="/semptom-analizi" className="btn btn-success mt-auto">Başla</Link>
           </div>
         </div>
       </div>
@@ -212,4 +195,3 @@ function Dashboard({ handleLogout }) {
 }
 
 export default Dashboard;
-
