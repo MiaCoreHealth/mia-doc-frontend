@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import History from './History.jsx'; // YENİ: Geçmiş raporlar bileşeni import edildi
 
 function RaporAnalizi() {
   const [messages, setMessages] = useState([]);
@@ -9,6 +10,7 @@ function RaporAnalizi() {
   const [currentQuestion, setCurrentQuestion] = useState("");
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [historyKey, setHistoryKey] = useState(0); // YENİ: Geçmişi yenilemek için state
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,6 +57,10 @@ function RaporAnalizi() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setMessages(prev => [...prev, { sender: 'mia', text: response.data.analysis_result }]);
+      // YENİ: Rapor yüklendiğinde geçmişi yenile
+      if (file && !forSomeoneElse) {
+        setHistoryKey(prevKey => prevKey + 1);
+      }
     } catch (error) {
       const errorText = error.response?.data?.detail || 'Analiz sırasında bir ağ hatası oluştu.';
       setMessages(prev => [...prev, { sender: 'mia', text: `Bir hata oluştu: ${errorText}` }]);
@@ -79,57 +85,68 @@ function RaporAnalizi() {
   };
 
   return (
-    <div className="chat-page-container">
-      <div className="chat-header">
-        <Link to="/" className="btn btn-outline-secondary btn-sm me-3">← Geri</Link>
-        <h5>Rapor Analizi Asistanı</h5>
-      </div>
-
-      <div className="chat-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-row ${msg.sender === 'user' ? 'user-row' : 'mia-row'}`}>
-            {msg.sender === 'mia' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
-            <div className={`message-bubble ${msg.sender === 'user' ? 'user-bubble' : 'mia-bubble'}`}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="message-row mia-row">
-            <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
-            <div className="message-bubble mia-bubble">
-                Mia düşünüyor...
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="chat-input-area">
-        <form onSubmit={handleSendQuestion} className="chat-input-form">
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }} />
-          <label htmlFor="fileInput" className="send-button" style={{backgroundColor: '#6c757d', cursor: 'pointer'}}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-paperclip" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></svg>
-          </label>
-          <input
-            type="text"
-            className="chat-input"
-            placeholder="Takip sorunuzu buraya yazın..."
-            value={currentQuestion}
-            onChange={(e) => setCurrentQuestion(e.target.value)}
-            disabled={isLoading}
-          />
-          <button type="submit" className="send-button" disabled={isLoading || !currentQuestion.trim()}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-send-fill" viewBox="0 0 16 16"><path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/></svg>
-          </button>
-        </form>
-         <div className="form-check mt-2 ms-1">
-            <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
-            <label className="form-check-label small text-muted" htmlFor="forSomeoneElseCheck">Bu rapor başkasına ait (geçmişe kaydedilmeyecek)</label>
+    // YENİ: Sayfayı sarmalayan bir ana div
+    <div>
+      <div className="chat-page-container">
+        <div className="chat-header">
+          <Link to="/" className="btn btn-outline-secondary btn-sm me-3">← Geri</Link>
+          <h5>Rapor Analizi Asistanı</h5>
         </div>
+
+        <div className="chat-messages">
+          {messages.map((msg, index) => (
+            <div key={index} className={`message-row ${msg.sender === 'user' ? 'user-row' : 'mia-row'}`}>
+              {msg.sender === 'mia' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
+              <div className={`message-bubble ${msg.sender === 'user' ? 'user-bubble' : 'mia-bubble'}`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="message-row mia-row">
+              <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
+              <div className="message-bubble mia-bubble">
+                  Mia düşünüyor...
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="chat-input-area">
+          <form onSubmit={handleSendQuestion} className="chat-input-form">
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }} />
+            <label htmlFor="fileInput" className="send-button" style={{backgroundColor: '#6c757d', cursor: 'pointer'}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-paperclip" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></svg>
+            </label>
+            <input
+              type="text"
+              className="chat-input"
+              placeholder="Takip sorunuzu buraya yazın..."
+              value={currentQuestion}
+              onChange={(e) => setCurrentQuestion(e.target.value)}
+              disabled={isLoading}
+            />
+            {/* DÜZELTME: Gönder butonu ikonu değiştirildi */}
+            <button type="submit" className="send-button" disabled={isLoading || !currentQuestion.trim()}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-arrow-right-short" viewBox="0 0 16 16">
+                    <path fillRule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/>
+                </svg>
+            </button>
+          </form>
+          <div className="form-check mt-2 ms-1">
+              <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
+              <label className="form-check-label small text-muted" htmlFor="forSomeoneElseCheck">Bu rapor başkasına ait (geçmişe kaydedilmeyecek)</label>
+          </div>
+        </div>
+      </div>
+      {/* YENİ: Geçmiş Raporlar bölümü eklendi */}
+      <div className="mt-4">
+        <History key={historyKey} />
       </div>
     </div>
   );
 }
 
 export default RaporAnalizi;
+
