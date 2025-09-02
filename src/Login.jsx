@@ -27,8 +27,11 @@ function Login({ handleLoginSuccess }) {
       
       const { access_token } = response.data;
       localStorage.setItem('userToken', access_token);
+      
+      // Önce ana uygulamaya haber ver, sonra yönlendir.
       handleLoginSuccess();
       navigate('/');
+
     } catch (error) {
       if (error.response && error.response.data && error.response.data.detail) {
         setMessage(error.response.data.detail);
@@ -90,3 +93,4 @@ function Login({ handleLoginSuccess }) {
 }
 
 export default Login;
+

@@ -1,54 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './Login';
-import Register from './Register';
-import Dashboard from './Dashboard';
-import Profile from './Profile';
-import LandingPage from './LandingPage';
-import RaporAnalizi from './RaporAnalizi';
-import SemptomAnalizi from './SemptomAnalizi';
-// Ilaclarim import'u kaldırıldı
+import Login from './Login.jsx';
+import Register from './Register.jsx';
+import Dashboard from './Dashboard.jsx';
+import Profile from './Profile.jsx';
+import RaporAnalizi from './RaporAnalizi.jsx';
+import SemptomAnalizi from './SemptomAnalizi.jsx';
+import LandingPage from './LandingPage.jsx';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Tarayıcı hafızasındaki token'ı kontrol ederek başlangıç durumunu belirle
+  const [isAuthenticated, setIsAuthenticated] = React.useState(!!localStorage.getItem('userToken'));
 
-  useEffect(() => {
-    const token = localStorage.getItem('userToken');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
-
-  const handleLogin = (token) => {
-    localStorage.setItem('userToken', token);
+  // Giriş başarılı olduğunda bu fonksiyon çağrılır
+  const handleLoginSuccess = () => {
     setIsAuthenticated(true);
   };
 
+  // Çıkış yapıldığında bu fonksiyon çağrılır
   const handleLogout = () => {
     localStorage.removeItem('userToken');
     setIsAuthenticated(false);
   };
 
-  if (isLoading) {
-    return <div className="d-flex justify-content-center align-items-center" style={{height: "100vh"}}><div className="spinner-border" role="status"><span className="visually-hidden">Yükleniyor...</span></div></div>;
-  }
-
   return (
     <Router>
-      <div className="container my-5">
-        <Routes>
-          <Route path="/" element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" />} />
-          <Route path="/login" element={!isAuthenticated ? <Login handleLogin={handleLogin} /> : <Navigate to="/dashboard" />} />
-          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/" />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
-          <Route path="/rapor-analizi" element={isAuthenticated ? <RaporAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
-          <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi handleLogout={handleLogout} /> : <Navigate to="/" />} />
-          {/* Ilaclarim rotası kaldırıldı */}
-        </Routes>
-      </div>
+      <Routes>
+        {/* Giriş ve Kayıt sayfaları */}
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login handleLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
+        
+        {/* Ana Sayfa ve Karşılama */}
+        <Route path="/" element={isAuthenticated ? <Dashboard handleLogout={handleLogout} /> : <LandingPage />} />
+        
+        {/* Korumalı Sayfalar */}
+        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/rapor-analizi" element={isAuthenticated ? <RaporAnalizi /> : <Navigate to="/login" />} />
+        <Route path="/semptom-analizi" element={isAuthenticated ? <SemptomAnalizi /> : <Navigate to="/login" />} />
+        
+        {/* Tanımsız bir yola gidilirse ana sayfaya yönlendir */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </Router>
   );
 }
