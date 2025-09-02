@@ -1,44 +1,129 @@
-/* ----------------------------------------- */
-/* MIA-DOC TASARIM SİSTEMİ          */
-/* ----------------------------------------- */
+/* public/index.css (Yeni Tasarım Sistemi) */
 
-/* 1. Renk Paletimizi Tanımlıyoruz */
+/* Kök Renk Paleti ve Temel Stiller */
 :root {
-  --primary-color: #0d6efd;      /* Ana Mavi Renk (Bootstrap mavisi) */
-  --secondary-color: #6c757d;   /* Gri Renk */
-  --success-color: #198754;      /* Başarı Yeşili */
-  --danger-color: #dc3545;       /* Hata Kırmızısı */
-  --light-bg: #f8f9fa;          /* Açık Arka Plan Rengi */
-  --dark-text: #212529;          /* Koyu Metin Rengi */
+  --primary-color: #3B82F6; /* Canlı Mavi */
+  --primary-hover: #2563EB; /* Koyu Mavi */
+  --secondary-color: #10B981; /* Yeşil */
+  --background-color: #F9FAFB; /* Çok Açık Gri */
+  --text-color: #1F2937; /* Koyu Gri */
+  --muted-text-color: #6B7280; /* Normal Gri */
+  --card-background: #FFFFFF; /* Beyaz */
+  --border-color: #E5E7EB; /* Açık Gri Sınır */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* 2. Yeni Fontumuzu Tüm Uygulamaya Uyguluyoruz */
 body {
-  margin: 0;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--light-bg) !important;
-  color: var(--dark-text);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* İçeriği yukarıdan başlat */
+  min-height: 100vh;
+  padding-top: 4rem; /* İçeriğe üstten boşluk ver */
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600; /* Başlıkları daha belirgin yap */
+/* Ana Konteyner Stili */
+#root {
+  width: 100%;
+  max-width: 900px; /* Ana içeriğin maksimum genişliği */
+  padding: 1rem;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+
+/* --- YENİ GİRİŞ/KAYIT FORMU STİLLERİ --- */
+
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
-/* 3. Butonlara Animasyon Ekleme */
-.btn {
-  transition: all 0.2s ease-in-out; /* Tüm butonlara yumuşak geçiş efekti */
+.auth-card {
+  background-color: var(--card-background);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid var(--border-color);
 }
 
-.btn:hover {
-  transform: translateY(-2px); /* Butonun üzerine gelince hafifçe yukarı kalksın */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Hafif bir gölge ekle */
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-header .logo {
+    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header .tagline {
+    color: var(--muted-text-color);
+}
+
+/* Form Elemanları */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+}
+
+/* Buton Stilleri */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--muted-text-color);
+}
+
+.auth-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Diğer Genel Stiller */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
 }

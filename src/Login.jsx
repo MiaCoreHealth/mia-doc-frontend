@@ -2,78 +2,87 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-function Login({ handleLogin }) {
+function Login({ handleLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError(''); // Hata mesajını temizle
+    setIsLoading(true);
+    setMessage('');
 
+    const apiUrl = import.meta.env.VITE_API_URL;
+    
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await axios.post(`${apiUrl}/token`, {
-        username: email,
-        password: password
-      }, {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const response = await axios.post(`${apiUrl}/token`, formData, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       
-      handleLogin(response.data.access_token);
-      navigate('/dashboard');
-
-    } catch (err) {
-      // DEĞİŞİKLİK: Backend'den gelen spesifik hatayı göster
-      if (err.response && err.response.data && err.response.data.detail) {
-        setError(err.response.data.detail);
+      const { access_token } = response.data;
+      localStorage.setItem('userToken', access_token);
+      handleLoginSuccess();
+      navigate('/');
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.detail) {
+        setMessage(error.response.data.detail);
       } else {
-        setError('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+        setMessage('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    // DEĞİŞİKLİK: Sayfayı ortalamak için yapı eklendi
-    <div className="row justify-content-center mt-5">
-      <div className="col-md-6 col-lg-5">
-        <div className="card shadow-lg">
-          <div className="card-body p-4">
-            <div className="text-center mb-4">
-              <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia" style={{ width: '80px', height: '80px' }} />
-              <h2 className="card-title mt-2">Tekrar Hoş Geldin!</h2>
-            </div>
-            <form onSubmit={handleSubmit}>
-              {error && <div className="alert alert-danger">{error}</div>}
-              <div className="mb-3">
-                <label className="form-label">E-posta Adresi</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Şifre</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="d-grid">
-                <button type="submit" className="btn btn-primary">Giriş Yap</button>
-              </div>
-            </form>
-            <div className="text-center mt-3">
-              <p>Hesabın yok mu? <Link to="/register">Kayıt Ol</Link></p>
-            </div>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+            <div className="logo">MiaCore Health</div>
+            <p className="tagline">Kişisel sağlık asistanınıza hoş geldiniz.</p>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="emailInput" className="form-label">E-posta Adresi</label>
+            <input
+              type="email"
+              className="form-control"
+              id="emailInput"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="ornek@mail.com"
+            />
           </div>
+          <div className="mb-4">
+            <label htmlFor="passwordInput" className="form-label">Şifre</label>
+            <input
+              type="password"
+              className="form-control"
+              id="passwordInput"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          {message && <div className="alert alert-danger mb-3">{message}</div>}
+
+          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+            {isLoading ? <span className="spinner-border spinner-border-sm"></span> : 'Giriş Yap'}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Hesabın yok mu? <Link to="/register">Hemen Kayıt Ol</Link>
         </div>
       </div>
     </div>
