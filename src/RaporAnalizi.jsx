@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import api from './api'; // DEĞİŞİKLİK
+import api from './api';
 import History from './History.jsx';
 
 function RaporAnalizi() {
@@ -22,15 +22,13 @@ function RaporAnalizi() {
 
   useEffect(() => {
     setMessages([
-      { sender: 'mia', text: 'Merhaba! Ben Mia. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.' }
+      { sender: 'mia', text: 'Merhaba! Ben Mia, kişisel sağlık asistanın. Analiz etmemi istediğin tıbbi raporunu (.jpg, .png) yükleyebilir veya bir soru sorabilirsin.' }
     ]);
   }, []);
 
   const sendMessageToApi = async ({ file, question }) => {
     if (!file && (!question || !question.trim())) return;
-
     setIsLoading(true);
-    
     const userMessages = [];
     if (file) {
       userMessages.push({ sender: 'user', text: `Yüklendi: ${file.name}` });
@@ -40,25 +38,16 @@ function RaporAnalizi() {
     }
     setMessages(prev => [...prev, ...userMessages]);
     setCurrentQuestion("");
-    
     const formData = new FormData();
     const historyToSend = messages.filter(m => !m.text.startsWith('Merhaba'));
-    
     if (file) formData.append('file', file);
     if (question) formData.append('question', question);
-    
-    // api.js artık token'ı otomatik eklediği için history'i de gönderiyoruz
     formData.append('history_json', JSON.stringify([...historyToSend, ...userMessages]));
     formData.append('for_someone_else', forSomeoneElse);
-
     try {
-      // DEĞİŞİKLİK: axios yerine api kullanılıyor ve headers kaldırıldı
       const response = await api.post(`/report/analyze/`, formData);
       setMessages(prev => [...prev, { sender: 'mia', text: response.data.analysis_result }]);
-      
-      if (file && !forSomeoneElse) {
-        setHistoryKey(prevKey => prevKey + 1);
-      }
+      if (file && !forSomeoneElse) { setHistoryKey(prevKey => prevKey + 1); }
     } catch (error) {
       const errorText = error.response?.data?.detail || 'Analiz sırasında bir ağ hatası oluştu.';
       setMessages(prev => [...prev, { sender: 'mia', text: `Bir hata oluştu: ${errorText}` }]);
@@ -83,49 +72,67 @@ function RaporAnalizi() {
   };
 
   return (
-    <div className="chat-page-container">
-      <div className="chat-header">
-        <Link to="/" className="btn btn-outline-secondary btn-sm me-3">← Geri</Link>
-        <h5>Rapor Analizi Asistanı</h5>
-      </div>
-      <div className="chat-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-row ${msg.sender === 'user' ? 'user-row' : 'mia-row'}`}>
-            {msg.sender === 'mia' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
-            <div className={`message-bubble ${msg.sender === 'user' ? 'user-bubble' : 'mia-bubble'}`}>
-              {msg.text}
+    // DÜZELTME: Arayüzün bozulmaması için yapı değiştirildi.
+    <div>
+        <div className="chat-page-container mb-4">
+            <div className="chat-header">
+                <Link to="/" className="btn btn-outline-secondary btn-sm me-3">← Geri</Link>
+                <h5>Rapor Analizi Asistanı</h5>
             </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="message-row mia-row">
-            <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
-            <div className="message-bubble mia-bubble">Mia düşünüyor...</div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="chat-input-area">
-        <form onSubmit={handleSendQuestion} className="chat-input-form">
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }} />
-          <label htmlFor="fileInput" className="send-button" style={{backgroundColor: '#6c757d', cursor: 'pointer'}}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></svg>
-          </label>
-          <input type="text" className="chat-input" placeholder="Takip sorunuzu buraya yazın..." value={currentQuestion} onChange={(e) => setCurrentQuestion(e.target.value)} disabled={isLoading}/>
-          <button type="submit" className="send-button" disabled={isLoading || !currentQuestion.trim()}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/></svg>
-          </button>
-        </form>
-        <div className="form-check mt-2 ms-1">
-            <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
-            <label className="form-check-label small text-muted" htmlFor="forSomeoneElseCheck">Bu rapor başkasına ait (geçmişe kaydedilmeyecek)</label>
+
+            <div className="chat-messages">
+                {messages.map((msg, index) => (
+                <div key={index} className={`message-row ${msg.sender === 'user' ? 'user-row' : 'mia-row'}`}>
+                    {msg.sender === 'mia' && <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />}
+                    <div className={`message-bubble ${msg.sender === 'user' ? 'user-bubble' : 'mia-bubble'}`}>
+                    {msg.text}
+                    </div>
+                </div>
+                ))}
+                {isLoading && (
+                <div className="message-row mia-row">
+                    <img src="https://i.imgur.com/OnfAvOo.png" alt="Mia Avatar" className="avatar" />
+                    <div className="message-bubble mia-bubble">
+                        Mia düşünüyor...
+                    </div>
+                </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+
+            <div className="chat-input-area">
+                <form onSubmit={handleSendQuestion} className="chat-input-form">
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} disabled={isLoading} id="fileInput" style={{ display: 'none' }} />
+                    <label htmlFor="fileInput" className="send-button" style={{backgroundColor: '#6c757d', cursor: 'pointer'}}>
+                        <svg xmlns="http://www.w.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-paperclip" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></svg>
+                    </label>
+                    <input
+                        type="text"
+                        className="chat-input"
+                        placeholder="Takip sorunuzu buraya yazın..."
+                        value={currentQuestion}
+                        onChange={(e) => setCurrentQuestion(e.target.value)}
+                        disabled={isLoading}
+                    />
+                    {/* YENİ: Gönder Butonu İkonu Değiştirildi */}
+                    <button type="submit" className="send-button" disabled={isLoading || !currentQuestion.trim()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-arrow-right-circle-fill" viewBox="0 0 16 16">
+                            <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+                        </svg>
+                    </button>
+                </form>
+                <div className="form-check mt-2 ms-1">
+                    <input className="form-check-input" type="checkbox" id="forSomeoneElseCheck" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} disabled={isLoading} />
+                    <label className="form-check-label small text-muted" htmlFor="forSomeoneElseCheck">Bu rapor başkasına ait (geçmişe kaydedilmeyecek)</label>
+                </div>
+            </div>
         </div>
-      </div>
-      <div className="p-3">
+        
+        {/* Geçmiş raporlar artık sohbet penceresinin altında ayrı bir bileşen */}
         <History key={historyKey} />
-      </div>
     </div>
   );
 }
 
 export default RaporAnalizi;
+
